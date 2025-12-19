@@ -1,24 +1,32 @@
 body {
-  background: linear-gradient(135deg, #141e30, #243b55);
-  color: white;
   font-family: Arial;
+  background: #0b3d2e;
+  color: white;
   text-align: center;
 }
 
 input, button {
   padding: 10px;
   margin: 5px;
-  border-radius: 8px;
-  border: none;
+  font-size: 16px;
 }
 
 button {
-  background: #00c6ff;
-  color: black;
-  font-weight: bold;
+  background: gold;
+  border: none;
+  border-radius: 5px;
 }
 
-#players {
-  margin-top: 20px;
+.card-row {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
+.card-row img {
+  width: 60px;
+  border-radius: 6px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.6);
+  cursor: pointer;
+}
