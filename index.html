@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>29 Card Game Online</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<h1>🃏 29 Card Game</h1>
+
+<div id="menu">
+  <input id="name" placeholder="Your Name">
+  <input id="room" placeholder="Room Code">
+  <button onclick="createRoom()">Create Room</button>
+  <button onclick="joinRoom()">Join Room</button>
+</div>
+
+<div id="game" style="display:none">
+  <h2 id="roomTitle"></h2>
+  <div id="players"></div>
+  <div id="table"></div>
+</div>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+<script src="script.js"></script>
+</body>
+</html>
