@@ -23,6 +23,8 @@ const game = document.getElementById("game");
 const roomTitle = document.getElementById("roomTitle");
 const playersDiv = document.getElementById("players");
 const myCardsDiv = document.getElementById("myCards");
+const tableDiv = document.getElementById("table");
+const turnInfo = document.getElementById("turnInfo");
 
 let playerName = "";
 let roomCode = "";
@@ -72,26 +74,71 @@ function enterGame() {
     if (!data || !data.players) return;
 
     const players = Object.keys(data.players);
-    playersDiv.innerHTML = "";
 
+    // Show players
+    playersDiv.innerHTML = "";
     players.forEach(p => {
       playersDiv.innerHTML += `<div>${p}</div>`;
     });
 
-    // 🎯 Auto start when 4 players
+    // Start game when 4 players
     if (players.length === 4 && data.gameStarted === false) {
       db.ref("rooms/" + roomCode + "/gameStarted").set(true);
       distributeCards(players);
+      db.ref("rooms/" + roomCode + "/turn").set(players[0]);
     }
 
-    // 🃏 Show my cards
+    // Show turn
+    if (data.turn) {
+      turnInfo.innerText = "Turn: " + data.turn;
+    }
+
+    // Show table
+    tableDiv.innerHTML = "";
+    if (data.table) {
+      Object.keys(data.table).forEach(p => {
+        tableDiv.innerHTML += `<div>${p}: ${data.table[p]}</div>`;
+      });
+    }
+
+    // Show my cards
     if (data.hands && data.hands[playerName]) {
-      myCardsDiv.innerHTML = data.hands[playerName].join(" ");
+      myCardsDiv.innerHTML = "";
+      data.hands[playerName].forEach(card => {
+        const btn = document.createElement("button");
+        btn.innerText = card;
+        btn.onclick = () => playCard(card);
+        myCardsDiv.appendChild(btn);
+      });
     }
   });
 }
 
-// 🃏 CARD LOGIC
+// 🃏 PLAY CARD
+function playCard(card) {
+  db.ref("rooms/" + roomCode).once("value").then(snap => {
+    const data = snap.val();
+    if (data.turn !== playerName) {
+      alert("Wait for your turn bro");
+      return;
+    }
+
+    // Remove card from hand
+    const newHand = data.hands[playerName].filter(c => c !== card);
+    db.ref("rooms/" + roomCode + "/hands/" + playerName).set(newHand);
+
+    // Put card on table
+    db.ref("rooms/" + roomCode + "/table/" + playerName).set(card);
+
+    // Next turn
+    const players = Object.keys(data.players);
+    let idx = players.indexOf(playerName);
+    let next = players[(idx + 1) % players.length];
+    db.ref("rooms/" + roomCode + "/turn").set(next);
+  });
+}
+
+// 🃏 CARD LOGIC (29)
 const suits = ["♠", "♥", "♦", "♣"];
 const values = ["7", "8", "9", "10", "J", "Q", "K", "A"];
 
