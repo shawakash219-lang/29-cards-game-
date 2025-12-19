@@ -1,4 +1,5 @@
-alert("JS Working");
+
+alert("JS working");
 
 // 🔥 Firebase Config
 const firebaseConfig = {
@@ -11,7 +12,6 @@ const firebaseConfig = {
   appId: "1:989522634372:web:7c9e6059119ccbd71e84d1"
 };
 
-// Init Firebase
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
@@ -23,123 +23,84 @@ const game = document.getElementById("game");
 const roomTitle = document.getElementById("roomTitle");
 const playersDiv = document.getElementById("players");
 const myCardsDiv = document.getElementById("myCards");
-const tableDiv = document.getElementById("table");
-const turnInfo = document.getElementById("turnInfo");
 
 let playerName = "";
 let roomCode = "";
 
-// 🟢 CREATE ROOM
+// Create Room
 function createRoom() {
   playerName = nameInput.value.trim();
-  if (!playerName) {
-    alert("Username likho bro");
-    return;
-  }
+  if (!playerName) return alert("Username likho bro");
 
   roomCode = Math.floor(1000 + Math.random() * 9000).toString();
 
   db.ref("rooms/" + roomCode).set({
-    gameStarted: false,
-    players: {
-      [playerName]: true
-    }
+    players: {},
+    gameStarted: false
   });
 
-  enterGame();
+  joinRoom(true);
 }
 
-// 🟢 JOIN ROOM
-function joinRoom() {
+// Join Room
+function joinRoom(isCreator = false) {
   playerName = nameInput.value.trim();
-  roomCode = roomInput.value.trim();
+  roomCode = roomInput.value.trim() || roomCode;
 
-  if (!playerName || !roomCode) {
-    alert("Username aur Room Code dono likho");
-    return;
-  }
+  if (!playerName || !roomCode)
+    return alert("Name & Room Code required");
 
-  db.ref("rooms/" + roomCode + "/players/" + playerName).set(true);
+  db.ref(`rooms/${roomCode}/players/${playerName}`).set(true);
+
   enterGame();
+
+  if (isCreator) {
+    waitForPlayers();
+  }
 }
 
-// 🔥 ENTER GAME (MAIN LOGIC)
+// Enter Game
 function enterGame() {
   menu.style.display = "none";
   game.style.display = "block";
   roomTitle.innerText = "Room: " + roomCode;
 
-  db.ref("rooms/" + roomCode).on("value", snap => {
-    const data = snap.val();
-    if (!data || !data.players) return;
-
-    const players = Object.keys(data.players);
-
-    // Show players
+  db.ref(`rooms/${roomCode}/players`).on("value", snap => {
     playersDiv.innerHTML = "";
-    players.forEach(p => {
-      playersDiv.innerHTML += `<div>${p}</div>`;
+    snap.forEach(p => {
+      playersDiv.innerHTML += `<div>${p.key}</div>`;
     });
+  });
 
-    // Start game when 4 players
-    if (players.length === 4 && data.gameStarted === false) {
-      db.ref("rooms/" + roomCode + "/gameStarted").set(true);
-      distributeCards(players);
-      db.ref("rooms/" + roomCode + "/turn").set(players[0]);
-    }
+  db.ref(`rooms/${roomCode}/hands/${playerName}`).on("value", snap => {
+    if (snap.exists()) showMyCards(snap.val());
+  });
+}
 
-    // Show turn
-    if (data.turn) {
-      turnInfo.innerText = "Turn: " + data.turn;
-    }
-
-    // Show table
-    tableDiv.innerHTML = "";
-    if (data.table) {
-      Object.keys(data.table).forEach(p => {
-        tableDiv.innerHTML += `<div>${p}: ${data.table[p]}</div>`;
-      });
-    }
-
-    // Show my cards
-    if (data.hands && data.hands[playerName]) {
-      myCardsDiv.innerHTML = "";
-      data.hands[playerName].forEach(card => {
-        const btn = document.createElement("button");
-        btn.innerText = card;
-        btn.onclick = () => playCard(card);
-        myCardsDiv.appendChild(btn);
-      });
+// Wait for 4 players
+function waitForPlayers() {
+  db.ref(`rooms/${roomCode}/players`).on("value", snap => {
+    if (snap.numChildren() === 4) {
+      startGame(Object.keys(snap.val()));
     }
   });
 }
 
-// 🃏 PLAY CARD
-function playCard(card) {
-  db.ref("rooms/" + roomCode).once("value").then(snap => {
-    const data = snap.val();
-    if (data.turn !== playerName) {
-      alert("Wait for your turn bro");
-      return;
-    }
+// Start Game
+function startGame(players) {
+  const deck = shuffle(createDeck());
+  let hands = {};
 
-    // Remove card from hand
-    const newHand = data.hands[playerName].filter(c => c !== card);
-    db.ref("rooms/" + roomCode + "/hands/" + playerName).set(newHand);
-
-    // Put card on table
-    db.ref("rooms/" + roomCode + "/table/" + playerName).set(card);
-
-    // Next turn
-    const players = Object.keys(data.players);
-    let idx = players.indexOf(playerName);
-    let next = players[(idx + 1) % players.length];
-    db.ref("rooms/" + roomCode + "/turn").set(next);
+  players.forEach(p => {
+    hands[p] = deck.splice(0, 8);
   });
+
+  db.ref(`rooms/${roomCode}/hands`).set(hands);
+  db.ref(`rooms/${roomCode}/gameStarted`).set(true);
 }
 
-// 🃏 CARD LOGIC (29)
-const suits = ["♠", "♥", "♦", "♣"];
+// Cards
+const suits = ["S", "H", "D", "C"];
 const values = ["7", "8", "9", "10", "J", "Q", "K", "A"];
 
 function createDeck() {
@@ -156,13 +117,12 @@ function shuffle(deck) {
   return deck.sort(() => Math.random() - 0.5);
 }
 
-function distributeCards(players) {
-  let deck = shuffle(createDeck());
-  let hands = {};
-
-  players.forEach(p => {
-    hands[p] = deck.splice(0, 8);
+// Show cards
+function showMyCards(cards) {
+  myCardsDiv.innerHTML = "";
+  cards.forEach(card => {
+    const img = document.createElement("img");
+    img.src = "cards/" + card + ".png";
+    myCardsDiv.appendChild(img);
   });
-
-  db.ref("rooms/" + roomCode + "/hands").set(hands);
 }
