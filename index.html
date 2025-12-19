@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>29 Card Game Online</title>
-  <link rel="stylesheet" href="style.css">
+  <title>29 Card Game</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 <body>
 
@@ -11,14 +11,18 @@
 <div id="menu">
   <input id="name" placeholder="Your Name">
   <input id="room" placeholder="Room Code">
+  <br><br>
   <button onclick="createRoom()">Create Room</button>
   <button onclick="joinRoom()">Join Room</button>
 </div>
 
 <div id="game" style="display:none">
   <h2 id="roomTitle"></h2>
+  <h3>Players</h3>
   <div id="players"></div>
-  <div id="table"></div>
+
+  <h3>Your Cards</h3>
+  <div id="myCards"></div>
 </div>
 
 <!-- Firebase -->
