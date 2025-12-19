@@ -1,7 +1,6 @@
+alert("JS Working");
 
-alert("JS working");
-
-// Firebase config
+// 🔥 Firebase Config
 const firebaseConfig = {
   apiKey: "AIzaSyCLsfetGGbvG5aeVHQSzVMXyzt395Buucg",
   authDomain: "cards29-game.firebaseapp.com",
@@ -12,26 +11,26 @@ const firebaseConfig = {
   appId: "1:989522634372:web:7c9e6059119ccbd71e84d1"
 };
 
-// Initialize Firebase
+// Init Firebase
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-// HTML elements
+// Elements
 const nameInput = document.getElementById("name");
 const roomInput = document.getElementById("room");
 const menu = document.getElementById("menu");
 const game = document.getElementById("game");
 const roomTitle = document.getElementById("roomTitle");
 const playersDiv = document.getElementById("players");
+const myCardsDiv = document.getElementById("myCards");
 
 let playerName = "";
 let roomCode = "";
-let gameStarted = false;
 
-// Create Room
+// 🟢 CREATE ROOM
 function createRoom() {
   playerName = nameInput.value.trim();
-  if (playerName === "") {
+  if (!playerName) {
     alert("Username likho bro");
     return;
   }
@@ -39,6 +38,7 @@ function createRoom() {
   roomCode = Math.floor(1000 + Math.random() * 9000).toString();
 
   db.ref("rooms/" + roomCode).set({
+    gameStarted: false,
     players: {
       [playerName]: true
     }
@@ -47,12 +47,12 @@ function createRoom() {
   enterGame();
 }
 
-// Join Room
+// 🟢 JOIN ROOM
 function joinRoom() {
   playerName = nameInput.value.trim();
   roomCode = roomInput.value.trim();
 
-  if (playerName === "" || roomCode === "") {
+  if (!playerName || !roomCode) {
     alert("Username aur Room Code dono likho");
     return;
   }
@@ -61,32 +61,37 @@ function joinRoom() {
   enterGame();
 }
 
-// Enter Game (MAIN LOGIC)
+// 🔥 ENTER GAME (MAIN LOGIC)
 function enterGame() {
   menu.style.display = "none";
   game.style.display = "block";
   roomTitle.innerText = "Room: " + roomCode;
 
-  db.ref("rooms/" + roomCode + "/players").on("value", snap => {
-    playersDiv.innerHTML = "";
-    let playerList = [];
+  db.ref("rooms/" + roomCode).on("value", snap => {
+    const data = snap.val();
+    if (!data || !data.players) return;
 
-    snap.forEach(p => {
-      playersDiv.innerHTML += `<div>${p.key}</div>`;
-      playerList.push(p.key);
+    const players = Object.keys(data.players);
+    playersDiv.innerHTML = "";
+
+    players.forEach(p => {
+      playersDiv.innerHTML += `<div>${p}</div>`;
     });
 
-    // 4 players hone par cards baantna
-    if (playerList.length === 4 && !gameStarted) {
-      gameStarted = true;
-      distributeCards(playerList);
+    // 🎯 Auto start when 4 players
+    if (players.length === 4 && data.gameStarted === false) {
+      db.ref("rooms/" + roomCode + "/gameStarted").set(true);
+      distributeCards(players);
+    }
+
+    // 🃏 Show my cards
+    if (data.hands && data.hands[playerName]) {
+      myCardsDiv.innerHTML = data.hands[playerName].join(" ");
     }
   });
 }
 
-// ---------------- CARD LOGIC ----------------
-
-// 29 game cards
+// 🃏 CARD LOGIC
 const suits = ["♠", "♥", "♦", "♣"];
 const values = ["7", "8", "9", "10", "J", "Q", "K", "A"];
 
