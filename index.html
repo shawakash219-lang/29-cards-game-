@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>29 Card Game</title>
+  <title>29 Card Game Online</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -10,21 +10,15 @@
 
 <div id="menu">
   <input id="name" placeholder="Your Name">
-  <input id="room" placeholder="Room Code">
-  <br><br>
+  <input id="room" placeholder="Room Code (optional)">
   <button onclick="createRoom()">Create Room</button>
   <button onclick="joinRoom()">Join Room</button>
 </div>
 
 <div id="game" style="display:none">
   <h2 id="roomTitle"></h2>
-  <h3>Players</h3>
   <div id="players"></div>
-
-  <button id="startBtn" onclick="startGameManually()" style="display:none">
-    Start Game
-  </button>
-
+  <button id="startBtn" onclick="manualStart()">Start Game</button>
   <h3>Your Cards</h3>
   <div id="myCards"></div>
 </div>
