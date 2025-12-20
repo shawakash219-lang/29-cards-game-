@@ -1,4 +1,3 @@
-
 alert("JS working");
 
 // 🔥 Firebase Config
@@ -12,10 +11,11 @@ const firebaseConfig = {
   appId: "1:989522634372:web:7c9e6059119ccbd71e84d1"
 };
 
+// ✅ Initialize Firebase (ONLY ONCE)
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-// Elements
+// 🔹 HTML Elements
 const nameInput = document.getElementById("name");
 const roomInput = document.getElementById("room");
 const menu = document.getElementById("menu");
@@ -27,10 +27,13 @@ const myCardsDiv = document.getElementById("myCards");
 let playerName = "";
 let roomCode = "";
 
-// Create Room
+// ================= CREATE ROOM =================
 function createRoom() {
   playerName = nameInput.value.trim();
-  if (!playerName) return alert("Username likho bro");
+  if (!playerName) {
+    alert("Username likho bro");
+    return;
+  }
 
   roomCode = Math.floor(1000 + Math.random() * 9000).toString();
 
@@ -39,27 +42,24 @@ function createRoom() {
     gameStarted: false
   });
 
-  joinRoom(true);
+  joinRoom(); // creator bhi normal player jaisa join karega
 }
 
-// Join Room
-function joinRoom(isCreator = false) {
+// ================= JOIN ROOM =================
+function joinRoom() {
   playerName = nameInput.value.trim();
   roomCode = roomInput.value.trim() || roomCode;
 
-  if (!playerName || !roomCode)
-    return alert("Name & Room Code required");
+  if (!playerName || !roomCode) {
+    alert("Name aur Room Code dono chahiye");
+    return;
+  }
 
   db.ref(`rooms/${roomCode}/players/${playerName}`).set(true);
-
   enterGame();
-
-  if (isCreator) {
-    waitForPlayers();
-  }
 }
 
-// Enter Game
+// ================= ENTER GAME =================
 function enterGame() {
   menu.style.display = "none";
   game.style.display = "block";
@@ -67,6 +67,7 @@ function enterGame() {
 
   const roomRef = db.ref(`rooms/${roomCode}`);
 
+  // 🔹 Listen players & auto start game
   roomRef.child("players").on("value", snap => {
     playersDiv.innerHTML = "";
     const players = [];
@@ -76,7 +77,7 @@ function enterGame() {
       playersDiv.innerHTML += `<div>${p.key}</div>`;
     });
 
-    // ✅ AUTO START GAME WHEN 4 PLAYERS
+    // ✅ AUTO START WHEN EXACTLY 4 PLAYERS
     roomRef.child("gameStarted").once("value", gs => {
       if (players.length === 4 && !gs.val()) {
         startGame(players);
@@ -84,7 +85,7 @@ function enterGame() {
     });
   });
 
-  // Listen for my cards
+  // 🔹 Listen for my cards
   roomRef.child("hands/" + playerName).on("value", snap => {
     if (snap.exists()) {
       showMyCards(snap.val());
@@ -92,16 +93,7 @@ function enterGame() {
   });
 }
 
-// Wait for 4 players
-function waitForPlayers() {
-  db.ref(`rooms/${roomCode}/players`).on("value", snap => {
-    if (snap.numChildren() === 4) {
-      startGame(Object.keys(snap.val()));
-    }
-  });
-}
-
-// Start Game
+// ================= START GAME =================
 function startGame(players) {
   const deck = shuffle(createDeck());
   let hands = {};
@@ -114,7 +106,7 @@ function startGame(players) {
   db.ref(`rooms/${roomCode}/gameStarted`).set(true);
 }
 
-// Cards
+// ================= CARD LOGIC =================
 const suits = ["S", "H", "D", "C"];
 const values = ["7", "8", "9", "10", "J", "Q", "K", "A"];
 
@@ -132,12 +124,13 @@ function shuffle(deck) {
   return deck.sort(() => Math.random() - 0.5);
 }
 
-// Show cards
+// ================= SHOW MY CARDS =================
 function showMyCards(cards) {
   myCardsDiv.innerHTML = "";
   cards.forEach(card => {
     const img = document.createElement("img");
-    img.src = "cards/" + card + ".png";
+    img.src = "cards/" + card + ".png"; // eg: cards/AS.png
+    img.alt = card;
     myCardsDiv.appendChild(img);
   });
 }
