@@ -11,11 +11,10 @@ const firebaseConfig = {
   appId: "1:989522634372:web:7c9e6059119ccbd71e84d1"
 };
 
-// ✅ Initialize Firebase (ONLY ONCE)
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-// 🔹 HTML Elements
+// Elements
 const nameInput = document.getElementById("name");
 const roomInput = document.getElementById("room");
 const menu = document.getElementById("menu");
@@ -23,6 +22,7 @@ const game = document.getElementById("game");
 const roomTitle = document.getElementById("roomTitle");
 const playersDiv = document.getElementById("players");
 const myCardsDiv = document.getElementById("myCards");
+const startBtn = document.getElementById("startBtn");
 
 let playerName = "";
 let roomCode = "";
@@ -30,10 +30,7 @@ let roomCode = "";
 // ================= CREATE ROOM =================
 function createRoom() {
   playerName = nameInput.value.trim();
-  if (!playerName) {
-    alert("Username likho bro");
-    return;
-  }
+  if (!playerName) return alert("Username likho bro");
 
   roomCode = Math.floor(1000 + Math.random() * 9000).toString();
 
@@ -42,7 +39,7 @@ function createRoom() {
     gameStarted: false
   });
 
-  joinRoom(); // creator bhi normal player jaisa join karega
+  joinRoom();
 }
 
 // ================= JOIN ROOM =================
@@ -50,10 +47,8 @@ function joinRoom() {
   playerName = nameInput.value.trim();
   roomCode = roomInput.value.trim() || roomCode;
 
-  if (!playerName || !roomCode) {
-    alert("Name aur Room Code dono chahiye");
-    return;
-  }
+  if (!playerName || !roomCode)
+    return alert("Name aur Room Code dono chahiye");
 
   db.ref(`rooms/${roomCode}/players/${playerName}`).set(true);
   enterGame();
@@ -63,33 +58,38 @@ function joinRoom() {
 function enterGame() {
   menu.style.display = "none";
   game.style.display = "block";
-  roomTitle.innerText = "Room: " + roomCode;
+  roomTitle.innerText = "Room Code: " + roomCode;
 
   const roomRef = db.ref(`rooms/${roomCode}`);
 
-  // 🔹 Listen players & auto start game
   roomRef.child("players").on("value", snap => {
     playersDiv.innerHTML = "";
-    const players = [];
-
     snap.forEach(p => {
-      players.push(p.key);
       playersDiv.innerHTML += `<div>${p.key}</div>`;
-    });
-
-    // ✅ AUTO START WHEN EXACTLY 4 PLAYERS
-    roomRef.child("gameStarted").once("value", gs => {
-      if (players.length === 4 && !gs.val()) {
-        startGame(players);
-      }
     });
   });
 
-  // 🔹 Listen for my cards
+  roomRef.child("gameStarted").on("value", snap => {
+    startBtn.style.display = snap.val() ? "none" : "inline-block";
+  });
+
   roomRef.child("hands/" + playerName).on("value", snap => {
     if (snap.exists()) {
       showMyCards(snap.val());
     }
+  });
+}
+
+// ================= MANUAL START =================
+function manualStart() {
+  const roomRef = db.ref(`rooms/${roomCode}`);
+
+  roomRef.child("players").once("value", snap => {
+    if (snap.numChildren() !== 4) {
+      alert("4 players hone chahiye bro");
+      return;
+    }
+    startGame(Object.keys(snap.val()));
   });
 }
 
@@ -106,7 +106,7 @@ function startGame(players) {
   db.ref(`rooms/${roomCode}/gameStarted`).set(true);
 }
 
-// ================= CARD LOGIC =================
+// ================= CARDS =================
 const suits = ["S", "H", "D", "C"];
 const values = ["7", "8", "9", "10", "J", "Q", "K", "A"];
 
@@ -129,7 +129,7 @@ function showMyCards(cards) {
   myCardsDiv.innerHTML = "";
   cards.forEach(card => {
     const img = document.createElement("img");
-    img.src = "cards/" + card + ".png"; // eg: cards/AS.png
+    img.src = "cards/" + card + ".png";
     img.alt = card;
     myCardsDiv.appendChild(img);
   });
