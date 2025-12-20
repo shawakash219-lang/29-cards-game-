@@ -6,11 +6,10 @@
 </head>
 <body>
 
-<h1>🃏 29 Card Game</h1>
-
 <div id="menu">
-  <input id="name" placeholder="Your Name">
-  <input id="room" placeholder="Room Code (Join ke liye)">
+  <h2>29 Card Game</h2>
+  <input id="name" placeholder="Your Name"><br><br>
+  <input id="room" placeholder="Room Code (blank to create)"><br><br>
   <button onclick="createRoom()">Create Room</button>
   <button onclick="joinRoom()">Join Room</button>
 </div>
@@ -21,23 +20,18 @@
   <h3>Players</h3>
   <div id="players"></div>
 
+  <button id="startBtn" onclick="startGame()" style="display:none">
+    Start Game
+  </button>
+
   <h3>Your Cards</h3>
-  <div id="myCards" class="cards"></div>
-
-  <div id="bidding" style="display:none">
-    <h3>Bidding</h3>
-    <div id="bidTurn"></div>
-
-    <select id="bidValue"></select>
-    <button onclick="placeBid()">Bid</button>
-    <button onclick="passBid()">Pass</button>
-
-    <div id="bidStatus"></div>
-  </div>
+  <div id="myCards"></div>
 </div>
 
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
 <script src="script.js"></script>
 </body>
 </html>
