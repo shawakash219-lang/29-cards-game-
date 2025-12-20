@@ -6,21 +6,22 @@
 </head>
 <body>
 
+<h1>🃏 29 Card Game</h1>
+
 <div id="menu">
-  <h2>29 Card Game</h2>
-  <input id="name" placeholder="Your Name"><br><br>
-  <input id="room" placeholder="Room Code (blank to create)"><br><br>
+  <input id="name" placeholder="Your Name">
+  <input id="room" placeholder="Room Code">
+  <br><br>
   <button onclick="createRoom()">Create Room</button>
   <button onclick="joinRoom()">Join Room</button>
 </div>
 
 <div id="game" style="display:none">
   <h2 id="roomTitle"></h2>
-
   <h3>Players</h3>
   <div id="players"></div>
 
-  <button id="startBtn" onclick="startGame()" style="display:none">
+  <button id="startBtn" onclick="startGameManually()" style="display:none">
     Start Game
   </button>
 
@@ -29,8 +30,8 @@
 </div>
 
 <!-- Firebase -->
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
 <script src="script.js"></script>
 </body>
