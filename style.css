@@ -1,16 +1,9 @@
 body {
-  background: #0b4f3c;
+  background-color: #1b3d2d;
   color: white;
-  font-family: Arial;
+  font-family: Arial, sans-serif;
   text-align: center;
 }
-
-input, button, select {
-  padding: 8px;
-  margin: 5px;
-}
-
-.cards img {
-  width: 70px;
-  margin: 5px;
-}
+input { margin:5px; padding:5px;}
+button { padding:5px 10px; margin:5px; cursor:pointer; }
+#myCards img { border-radius:5px; }
