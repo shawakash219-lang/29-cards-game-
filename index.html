@@ -10,7 +10,8 @@
 
 <div id="menu">
   <input id="name" placeholder="Your Name">
-  <input id="room" placeholder="Room Code">
+  <input id="room" placeholder="Room Code (Join ke liye)">
+  <br>
   <button onclick="createRoom()">Create Room</button>
   <button onclick="joinRoom()">Join Room</button>
 </div>
@@ -20,6 +21,10 @@
 
   <h3>Players</h3>
   <div id="players"></div>
+
+  <button id="startBtn" onclick="manualStart()" style="display:none">
+    ▶ Start Game
+  </button>
 
   <h3>Your Cards</h3>
   <div id="myCards" class="card-row"></div>
