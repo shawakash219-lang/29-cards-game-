@@ -1,5 +1,5 @@
 body {
-  font-family: Arial;
+  font-family: Arial, sans-serif;
   background: #0b3d2e;
   color: white;
   text-align: center;
@@ -14,19 +14,23 @@ input, button {
 button {
   background: gold;
   border: none;
-  border-radius: 5px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+#players div {
+  margin: 3px;
 }
 
 .card-row {
   display: flex;
   justify-content: center;
-  gap: 10px;
   flex-wrap: wrap;
+  gap: 10px;
 }
 
 .card-row img {
   width: 60px;
   border-radius: 6px;
   box-shadow: 0 4px 8px rgba(0,0,0,0.6);
-  cursor: pointer;
 }
