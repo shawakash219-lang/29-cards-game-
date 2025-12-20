@@ -65,15 +65,30 @@ function enterGame() {
   game.style.display = "block";
   roomTitle.innerText = "Room: " + roomCode;
 
-  db.ref(`rooms/${roomCode}/players`).on("value", snap => {
+  const roomRef = db.ref(`rooms/${roomCode}`);
+
+  roomRef.child("players").on("value", snap => {
     playersDiv.innerHTML = "";
+    const players = [];
+
     snap.forEach(p => {
+      players.push(p.key);
       playersDiv.innerHTML += `<div>${p.key}</div>`;
+    });
+
+    // ✅ AUTO START GAME WHEN 4 PLAYERS
+    roomRef.child("gameStarted").once("value", gs => {
+      if (players.length === 4 && !gs.val()) {
+        startGame(players);
+      }
     });
   });
 
-  db.ref(`rooms/${roomCode}/hands/${playerName}`).on("value", snap => {
-    if (snap.exists()) showMyCards(snap.val());
+  // Listen for my cards
+  roomRef.child("hands/" + playerName).on("value", snap => {
+    if (snap.exists()) {
+      showMyCards(snap.val());
+    }
   });
 }
 
