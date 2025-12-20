@@ -1,4 +1,6 @@
-// Firebase Config
+alert("JS working");
+
+// 🔥 Firebase Config
 const firebaseConfig = {
   apiKey: "AIzaSyCLsfetGGbvG5aeVHQSzVMXyzt395Buucg",
   authDomain: "cards29-game.firebaseapp.com",
@@ -13,11 +15,13 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
 // Elements
+const nameInput = document.getElementById("name");
+const roomInput = document.getElementById("room");
 const menu = document.getElementById("menu");
 const game = document.getElementById("game");
+const roomTitle = document.getElementById("roomTitle");
 const playersDiv = document.getElementById("players");
 const myCardsDiv = document.getElementById("myCards");
-const roomTitle = document.getElementById("roomTitle");
 const startBtn = document.getElementById("startBtn");
 
 let playerName = "";
@@ -25,7 +29,7 @@ let roomCode = "";
 
 // Create Room
 function createRoom() {
-  playerName = name.value.trim();
+  playerName = nameInput.value.trim();
   if (!playerName) return alert("Name likho bro");
 
   roomCode = Math.floor(1000 + Math.random() * 9000).toString();
@@ -35,19 +39,25 @@ function createRoom() {
     started: false
   });
 
+  roomInput.value = roomCode;
   joinRoom();
 }
 
 // Join Room
 function joinRoom() {
-  playerName = name.value.trim();
-  roomCode = room.value.trim() || roomCode;
+  playerName = nameInput.value.trim();
+  roomCode = roomInput.value.trim();
 
   if (!playerName || !roomCode)
-    return alert("Name & Room Code required");
+    return alert("Name aur Room Code likho");
 
   db.ref(`rooms/${roomCode}/players/${playerName}`).set(true);
 
+  enterGame();
+}
+
+// Enter Game
+function enterGame() {
   menu.style.display = "none";
   game.style.display = "block";
   roomTitle.innerText = "Room: " + roomCode;
@@ -56,55 +66,71 @@ function joinRoom() {
 
   roomRef.child("players").on("value", snap => {
     playersDiv.innerHTML = "";
-    const players = Object.keys(snap.val() || {});
-    players.forEach(p => playersDiv.innerHTML += `<div>${p}</div>`);
+    const players = [];
+
+    snap.forEach(p => {
+      players.push(p.key);
+      playersDiv.innerHTML += `<div>${p.key}</div>`;
+    });
 
     if (players.length === 4) {
-      startBtn.style.display = "block";
+      startBtn.style.display = "inline-block";
     }
   });
 
   roomRef.child("hands/" + playerName).on("value", snap => {
-    if (snap.exists()) showCards(snap.val());
+    if (snap.exists()) {
+      showMyCards(snap.val());
+    }
   });
 }
 
-// Start Game
-function startGame() {
-  db.ref(`rooms/${roomCode}`).once("value", snap => {
-    const players = Object.keys(snap.val().players || {});
+// Manual Start Game
+function startGameManually() {
+  const roomRef = db.ref(`rooms/${roomCode}/players`);
+
+  roomRef.once("value", snap => {
+    const players = Object.keys(snap.val() || {});
     if (players.length !== 4) {
-      alert("4 players chahiye bro");
+      alert("4 players required");
       return;
     }
 
-    let deck = createDeck().sort(() => Math.random() - 0.5);
+    const deck = shuffle(createDeck());
     let hands = {};
 
-    players.forEach(p => hands[p] = deck.splice(0, 8));
+    players.forEach(p => {
+      hands[p] = deck.splice(0, 8);
+    });
 
     db.ref(`rooms/${roomCode}/hands`).set(hands);
     db.ref(`rooms/${roomCode}/started`).set(true);
   });
 }
 
-// Cards
+// Cards logic
 const suits = ["S", "H", "D", "C"];
 const values = ["7", "8", "9", "10", "J", "Q", "K", "A"];
 
 function createDeck() {
-  let d = [];
-  suits.forEach(s => values.forEach(v => d.push(v + s)));
-  return d;
+  let deck = [];
+  for (let s of suits) {
+    for (let v of values) {
+      deck.push(v + s);
+    }
+  }
+  return deck;
 }
 
-function showCards(cards) {
+function shuffle(deck) {
+  return deck.sort(() => Math.random() - 0.5);
+}
+
+function showMyCards(cards) {
   myCardsDiv.innerHTML = "";
-  cards.forEach(c => {
+  cards.forEach(card => {
     const img = document.createElement("img");
-    img.src = "cards/" + c + ".png";
-    img.style.width = "60px";
-    img.style.margin = "5px";
+    img.src = `cards/${card}.png`;
     myCardsDiv.appendChild(img);
   });
 }
