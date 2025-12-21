@@ -1,154 +1,130 @@
-alert("JS working");
+// 🔥 Firebase Config
+const firebaseConfig = {
+  apiKey: "AIzaSyCLsfetGGbvG5aeVHQSzVMXyzt395Buucg",
+  authDomain: "cards29-game.firebaseapp.com",
+  databaseURL: "https://cards29-game-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "cards29-game",
+  storageBucket: "cards29-game.appspot.com",
+  messagingSenderId: "989522634372",
+  appId: "1:989522634372:web:7c9e6059119ccbd71e84d1"
+};
 
-// -------- GLOBAL DATA --------
-let roomCode="";
-let playerName="";
-let players=[];
-let hands={};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
 
-// -------- JOIN / CREATE ROOM --------
-function joinRoom(){
-  playerName=document.getElementById("nameInput").value.trim();
+// Elements
+const nameInput = document.getElementById("name");
+const roomInput = document.getElementById("room");
+const menu = document.getElementById("menu");
+const game = document.getElementById("game");
+const roomTitle = document.getElementById("roomTitle");
+const playersDiv = document.getElementById("players");
+const myCardsDiv = document.getElementById("myCards");
+const startBtn = document.getElementById("startBtn");
+
+let playerName = "";
+let roomCode = "";
+
+// -------- CREATE ROOM (FIXED) --------
+function createRoom(){
+  playerName = nameInput.value.trim();
   if(!playerName){ alert("Enter name"); return; }
 
-  roomCode=document.getElementById("roomInput").value.trim();
-  if(!roomCode){
-    roomCode=Math.floor(1000+Math.random()*9000).toString();
-  }
+  roomCode = Math.floor(1000 + Math.random() * 9000).toString();
 
-  if(!localStorage[roomCode]){
-    localStorage[roomCode]=JSON.stringify([]);
-  }
-
-  players=JSON.parse(localStorage[roomCode]);
-  if(!players.includes(playerName)){
-    players.push(playerName);
-  }
-
-  localStorage[roomCode]=JSON.stringify(players);
-
-  document.getElementById("lobby").style.display="none";
-  document.getElementById("game").style.display="block";
-  document.getElementById("roomText").innerText="Room: "+roomCode;
-
-  updatePlayers();
+  db.ref("rooms/" + roomCode).set({
+    players: {},
+    started: false
+  }).then(()=>{
+    roomInput.value = roomCode;
+    joinRoom();
+  });
 }
 
-// -------- UPDATE PLAYERS --------
-function updatePlayers(){
-  const div=document.getElementById("players");
-  div.innerHTML="";
-  players.forEach(p=>{
-    const d=document.createElement("div");
-    d.innerText=p;
-    div.appendChild(d);
+// -------- JOIN ROOM --------
+function joinRoom(){
+  playerName = nameInput.value.trim();
+  roomCode = roomInput.value.trim();
+  if(!playerName || !roomCode){
+    alert("Name & Room code required");
+    return;
+  }
+
+  db.ref(`rooms/${roomCode}/players/${playerName}`).set(true);
+  enterGame();
+}
+
+// -------- ENTER GAME --------
+function enterGame(){
+  menu.style.display = "none";
+  game.style.display = "block";
+  roomTitle.innerText = "Room: " + roomCode;
+
+  const roomRef = db.ref(`rooms/${roomCode}`);
+
+  roomRef.child("players").on("value", snap=>{
+    playersDiv.innerHTML = "";
+    const players=[];
+    snap.forEach(p=>{
+      players.push(p.key);
+      playersDiv.innerHTML += `<div>${p.key}</div>`;
+    });
+
+    if(players.length === 4){
+      startBtn.style.display = "inline-block";
+    }
   });
 
-  if(players.length===4){
-    document.getElementById("startBtn").style.display="inline-block";
-  }
+  roomRef.child("hands/"+playerName).on("value", snap=>{
+    if(snap.exists()){
+      showMyCards(snap.val());
+    }
+  });
 }
 
 // -------- START GAME --------
 function startGame(){
-  if(players.length!==4){
-    alert("4 players required");
-    return;
-  }
+  const roomRef = db.ref(`rooms/${roomCode}/players`);
+  roomRef.once("value", snap=>{
+    const players = Object.keys(snap.val()||{});
+    if(players.length !== 4){
+      alert("4 players required");
+      return;
+    }
 
-  let deck=createDeck();
-  shuffle(deck);
+    let deck = shuffle(createDeck());
+    let hands = {};
+    players.forEach(p=>{
+      hands[p] = deck.splice(0,8);
+    });
 
-  players.forEach(p=>{
-    hands[p]=deck.splice(0,8);
-  });
-
-  showMyCards();
-  startBidding();
-}
-
-// -------- SHOW CARDS --------
-function showMyCards(){
-  const div=document.getElementById("myCards");
-  div.innerHTML="";
-  hands[playerName].forEach(c=>{
-    const img=document.createElement("img");
-    img.src="cards/"+c+".png";
-    div.appendChild(img);
+    db.ref(`rooms/${roomCode}/hands`).set(hands);
+    db.ref(`rooms/${roomCode}/started`).set(true);
   });
 }
 
-// -------- DECK --------
+// -------- CARDS --------
+const suits=["S","H","D","C"];
+const values=["A","K","Q","J","10","9","8","7"];
+
 function createDeck(){
-  const suits=["S","H","D","C"];
-  const ranks=["A","K","Q","J","10","9","8","7"];
-  let deck=[];
+  let d=[];
   suits.forEach(s=>{
-    ranks.forEach(r=>{
-      deck.push(r+s);
+    values.forEach(v=>{
+      d.push(v+s);
     });
   });
-  return deck;
+  return d;
 }
-
 function shuffle(a){
-  for(let i=a.length-1;i>0;i--){
-    let j=Math.floor(Math.random()*(i+1));
-    [a[i],a[j]]=[a[j],a[i]];
-  }
+  return a.sort(()=>Math.random()-0.5);
 }
 
-// -------- BIDDING --------
-let bidIndex=0;
-let highestBid=0;
-let highestBidder="";
-let passCount=0;
-
-function startBidding(){
-  document.getElementById("biddingBox").style.display="block";
-  bidIndex=0;
-  highestBid=0;
-  highestBidder="";
-  passCount=0;
-  updateBidTurn();
-}
-
-function updateBidTurn(){
-  document.getElementById("bidTurn").innerText=
-    "Turn: "+players[bidIndex%4];
-}
-
-function placeBid(){
-  const bid=parseInt(document.getElementById("bidValue").value);
-  if(!bid || bid<16 || bid<=highestBid){
-    alert("Invalid bid");
-    return;
-  }
-  highestBid=bid;
-  highestBidder=players[bidIndex%4];
-  passCount=0;
-  document.getElementById("bidStatus").innerText=
-    highestBidder+" bid "+bid;
-  nextBid();
-}
-
-function passBid(){
-  passCount++;
-  document.getElementById("bidStatus").innerText=
-    players[bidIndex%4]+" passed";
-  if(passCount===3){
-    endBidding();
-    return;
-  }
-  nextBid();
-}
-
-function nextBid(){
-  bidIndex++;
-  updateBidTurn();
-}
-
-function endBidding(){
-  document.getElementById("biddingBox").style.display="none";
-  alert("Bid Winner: "+highestBidder+" ("+highestBid+")");
+function showMyCards(cards){
+  myCardsDiv.innerHTML="";
+  cards.forEach(c=>{
+    const img=document.createElement("img");
+    img.src="cards/"+c+".png";
+    myCardsDiv.appendChild(img);
+  });
 }
