@@ -1,31 +1,71 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>29 Card Game Online</title>
-  <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<title>29 Cards Game</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+body{
+  font-family: Arial, sans-serif;
+  background:#0f5132;
+  color:white;
+  text-align:center;
+}
+input,button{
+  padding:8px;
+  margin:5px;
+  font-size:16px;
+}
+button{
+  background:#198754;
+  color:white;
+  border:none;
+  border-radius:5px;
+}
+#game,#biddingBox{display:none;}
+#myCards img{
+  width:60px;
+  margin:4px;
+}
+</style>
 </head>
+
 <body>
 
-<h1>🃏 29 Card Game</h1>
+<h2>🃏 29 Cards Game</h2>
 
-<div id="menu">
-  <input id="name" placeholder="Your Name">
-  <input id="room" placeholder="Room Code (optional)">
-  <button onclick="createRoom()">Create Room</button>
-  <button onclick="joinRoom()">Join Room</button>
+<div id="lobby">
+  <input id="nameInput" placeholder="Your Name">
+  <br>
+  <input id="roomInput" placeholder="Room Code (blank = create)">
+  <br>
+  <button onclick="joinRoom()">Join / Create Room</button>
 </div>
 
-<div id="game" style="display:none">
-  <h2 id="roomTitle"></h2>
+<div id="game">
+  <h3 id="roomText"></h3>
+
+  <h4>Players</h4>
   <div id="players"></div>
-  <button id="startBtn" onclick="manualStart()">Start Game</button>
+
+  <button id="startBtn" onclick="startGame()" style="display:none">
+    Start Game
+  </button>
+
   <h3>Your Cards</h3>
   <div id="myCards"></div>
 </div>
 
-<!-- Firebase -->
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<div id="biddingBox">
+  <h3>Bidding</h3>
+  <p id="bidTurn"></p>
+  <input type="number" id="bidValue" min="16" max="28" placeholder="Bid 16-28">
+  <br>
+  <button onclick="placeBid()">Bid</button>
+  <button onclick="passBid()">Pass</button>
+  <p id="bidStatus"></p>
+</div>
 
 <script src="script.js"></script>
 </body>
