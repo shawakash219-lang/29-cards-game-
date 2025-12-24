@@ -1,37 +1,53 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8">
   <title>29 Card Game</title>
+
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<div id="menu">
-  <h1>🃏 29 Card Game</h1>
-  <input id="name" placeholder="Your Name">
-  <input id="room" placeholder="Room Code (optional)">
-  <button onclick="createRoom()">Create Room</button>
-  <button onclick="joinRoom()">Join Room</button>
+<h2>🃏 29 Card Game</h2>
+
+<div id="joinBox">
+  <input id="nameInput" placeholder="Your Name">
+  <input id="roomInput" placeholder="Room Code (blank = create)">
+  <button onclick="joinRoom()">Join / Create</button>
 </div>
 
-<div id="game" style="display:none;">
-  <h2 id="roomTitle"></h2>
+<h3 id="roomText"></h3>
 
-  <h3>Players</h3>
-  <div id="players"></div>
+<h3>Players</h3>
+<ul id="players"></ul>
 
-  <button id="startBtn" onclick="startGame()" style="display:none;">
-    ▶ Start Game
-  </button>
+<button id="startBtn" onclick="startGame()" style="display:none;">
+  START GAME
+</button>
 
-  <h3>Your Cards</h3>
-  <div id="myCards" class="cards"></div>
+<!-- BIDDING -->
+<div id="biddingBox" style="display:none;">
+  <h3>Bidding</h3>
+  <p id="bidInfo"></p>
+  <input id="bidInput" type="number" min="16" max="28">
+  <button onclick="placeBid()">Bid</button>
+  <button onclick="passBid()">Pass</button>
 </div>
 
-<!-- Firebase -->
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<!-- DOUBLE -->
+<div id="doubleBox" style="display:none;">
+  <button onclick="doubleGame()">DOUBLE</button>
+  <button onclick="redoubleGame()">REDOUBLE</button>
+</div>
+
+<!-- PLAY AREA -->
+<h3>Table</h3>
+<div id="table"></div>
+
+<h3>Your Cards</h3>
+<div id="cards"></div>
 
 <script src="script.js"></script>
 </body>
