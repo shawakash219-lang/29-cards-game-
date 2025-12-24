@@ -26,43 +26,57 @@ function joinRoom(){
   listenPlayers();
 }
 
-function listenPlayers(){
-  db.ref(`rooms/${roomCode}/players`).on("value",s=>{
-    players.innerHTML="";
-    if(!s.exists()) return;
-    Object.keys(s.val()).forEach(p=>{
-      let li=document.createElement("li");
-      li.innerText=p;
-      players.appendChild(li);
+function listenPlayers() {
+  db.ref(`rooms/${roomCode}/players`).on("value", snap => {
+    const playersDiv = document.getElementById("players");
+    playersDiv.innerHTML = "";
+    if (!snap.exists()) return;
+
+    const players = Object.keys(snap.val());
+    players.forEach(p => {
+      let li = document.createElement("li");
+      li.innerText = p;
+      playersDiv.appendChild(li);
     });
-    if(Object.keys(s.val()).length===4){
-      startBtn.style.display="inline";
+
+    // ✅ SHOW START BUTTON IF 4 PLAYERS
+    const startBtn = document.getElementById("startBtn");
+    if(players.length === 4){
+      startBtn.style.display = "inline";
+    } else {
+      startBtn.style.display = "none";
     }
   });
 }
 
 // ========== START ==========
-function startGame(){
-  db.ref(`rooms/${roomCode}/players`).once("value",s=>{
-    let P=Object.keys(s.val());
-    let deck=shuffle(createDeck());
-    let hands={};
+function startGame()
+{
+  db.ref(`rooms/${roomCode}/players`).once("value", snap => {
+    if(!snap.exists()) return alert("No players found");
+    
+    const players = Object.keys(snap.val());
+    if(players.length !== 4) return alert("4 players required to start");
 
-    P.forEach((p,i)=>hands[p]=deck.slice(i*8,i*8+8));
+    const deck = shuffle(createDeck());
+    let hands = {};
 
-    db.ref(`rooms/${roomCode}`).set({
-      players:s.val(),
-      hands:hands,
-      phase:"bidding",
-      bid:16,
-      bidder:null,
-      multiplier:1,
-      trump:null,
-      trick:{},
-      scores:{team1:0,team2:0},
-      marriages:{},
-      playTurn:P[0]
+    players.forEach((p,i) => hands[p] = deck.slice(i*8, i*8+8));
+
+    db.ref(`rooms/${roomCode}`).update({
+      hands: hands,
+      phase: "bidding",
+      bid: 16,
+      bidder: null,
+      multiplier: 1,
+      trump: null,
+      trick: {},
+      scores: { team1:0, team2:0 },
+      marriages: {},
+      playTurn: players[0]
     });
+
+    alert("Game Started! Cards distributed.");
   });
 }
 
