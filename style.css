@@ -1,54 +1,86 @@
 body {
   margin: 0;
-  font-family: Arial, sans-serif;
-  background: #0b3d2e;
+  font-family: 'Segoe UI', sans-serif;
+  background: radial-gradient(#0b6623, #033);
   color: white;
   text-align: center;
 }
 
-#menu {
-  margin-top: 60px;
+/* ====== LAYOUT ====== */
+#game {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
-input {
-  display: block;
-  margin: 10px auto;
+#table {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 20px;
+}
+
+#table img {
+  width: 80px;
+  animation: drop 0.3s ease;
+}
+
+/* ====== PLAYER CARDS ====== */
+#cards {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
   padding: 10px;
-  width: 220px;
-  border-radius: 5px;
-  border: none;
+  background: rgba(0,0,0,0.4);
 }
 
-button {
-  padding: 10px 20px;
-  margin: 10px;
-  background: #ff9800;
-  border: none;
-  border-radius: 6px;
-  font-size: 16px;
+#cards img {
+  width: 65px;
   cursor: pointer;
+  transition: transform 0.2s;
+}
+
+#cards img:hover {
+  transform: translateY(-12px) scale(1.1);
+}
+
+/* ====== TOP BAR ====== */
+#top {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 15px;
+  background: rgba(0,0,0,0.5);
+}
+
+/* ====== BUTTONS ====== */
+button {
+  background: linear-gradient(#ffcc00, #ff9900);
+  border: none;
+  padding: 8px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
 }
 
 button:hover {
-  background: #e68900;
+  background: linear-gradient(#ffd633, #ffaa00);
 }
 
-#players div {
-  margin: 5px;
-  padding: 5px;
-  background: rgba(255,255,255,0.1);
-  border-radius: 4px;
+/* ====== PLAYERS ====== */
+#players li {
+  list-style: none;
+  padding: 4px;
 }
 
-.cards {
-  display: flex;
-  justify-content: center;
-  flex-wrap: wrap;
-  margin-top: 15px;
+/* ====== ANIMATION ====== */
+@keyframes drop {
+  from { transform: translateY(-30px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
 }
 
-.cards img {
-  width: 60px;
-  margin: 5px;
-  border-radius: 5px;
+/* ====== MOBILE ====== */
+@media (max-width: 600px) {
+  #cards img { width: 55px; }
+  #table img { width: 65px; }
 }
