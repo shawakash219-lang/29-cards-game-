@@ -46,8 +46,13 @@ function startSync() {
 
 // ================= UI UPDATE (SAB KUCH YAHAN CONTROL HOTA HAI) =================
 function updateUI(data) {
-    const isMyTurn = data.turn === playerName;
+    // Room ID ko screen par dikhane ke liye
+    if(document.getElementById("room-id-text")) {
+        document.getElementById("room-id-text").innerText = roomCode;
+    }
+
     const pList = Object.keys(data.players || {});
+    const isMyTurn = data.turn === playerName;
 
     // Status Bar
     let statusText = isMyTurn ? "YOUR TURN" : `${data.turn || 'Waiting'}'s Turn`;
@@ -190,7 +195,7 @@ function declareMarriage() {
 }
 
 function showPlayAgain(isCreator) {
-    if (isCreator) showSpecialBtn("play-again-btn", "Play Again 🔄", () => db.ref(`rooms/${roomCode}/phase`).set('waiting'));
+    if (isCreator) showSpecialBtn("play-again-btn", "Play Again 🔄", () => db.ref(`rooms/${roomCode}`).update({phase: 'waiting', trick: null, scores: {team1:0, team2:0}}));
 }
 
 // UI Helpers
