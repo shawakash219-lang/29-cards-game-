@@ -232,7 +232,7 @@ db.ref().on("value",()=>{
   if(!roomCode||!playerName) return;
 
   db.ref(`rooms/${roomCode}/hands/${playerName}`)
-    .once("value",s=>s.exists()&&showCards(s.val()));
+    .once("value",s=>s.exists()&&showmyCards(s.val()));
 
   db.ref(`rooms/${roomCode}/trick`).on("value",s=>{
     table.innerHTML="";
@@ -245,13 +245,20 @@ db.ref().on("value",()=>{
   });
 });
 
-function showCards(cards){
-  cardsDiv.innerHTML="";
-  cards.forEach(c=>{
-    let img=document.createElement("img");
-    img.src=`cards/${c}.png`;
-    img.onclick=()=>playCard(c);
-    cardsDiv.appendChild(img);
+function showMyCards(cards){
+  const div = document.getElementById("cards");
+  div.innerHTML = "";
+
+  cards.forEach(card => {
+    const img = document.createElement("img");
+    img.src = "cards/" + card + ".png";
+    img.style.width = "60px";
+    img.style.margin = "5px";
+    img.style.cursor = "pointer";
+
+    img.onclick = () => playCard(card);
+
+    div.appendChild(img);
   });
 }
 
