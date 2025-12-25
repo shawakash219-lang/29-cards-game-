@@ -1,15 +1,14 @@
-// Firebase Config
-const firebaseConfig = {
-    apiKey: "YOUR_API_KEY",
-    authDomain: "cards29-game.firebaseapp.com",
-    databaseURL: "https://cards29-game-default-rtdb.firebaseio.com",
-    projectId: "cards29-game",
-    storageBucket: "cards29-game.firebasestorage.app",
-    messagingSenderId: "989522634372",
-    appId: "1:989522634372:web:7c9e6059119ccbd71e84d1"
-};
-firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
+// ================= FIREBASE =================
+firebase.initializeApp({
+  apiKey: "AIzaSyCLsfetGGbvG5aeVHQSzVMXyzt395Buucg",
+  authDomain: "cards29-game.firebaseapp.com",
+  databaseURL: "https://cards29-game-default-rtdb.firebaseio.com",
+  projectId: "cards29-game",
+  storageBucket: "cards29-game.firebasestorage.app",
+  messagingSenderId: "989522634372",
+  appId: "1:989522634372:web:7c9e6059119ccbd71e84d1"
+});
+const db = firebase.database()
 
 let playerName, roomCode;
 const suits = ["S", "H", "D", "C"];
