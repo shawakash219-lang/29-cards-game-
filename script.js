@@ -107,16 +107,26 @@ function startGame() {
     deck.sort(() => Math.random() - 0.5);
 
     db.ref(`rooms/${roomCode}`).once('value', s => {
-        const players = Object.keys(s.val().players);
+        const data = s.val();
+        const players = Object.keys(data.players);
+
+        // Sirf unhi 4 logon ko cards milenge jo abhi room mein hain
         let hands = {};
         players.forEach((p, i) => hands[p] = deck.slice(i * 4, (i * 4) + 4));
+
         db.ref(`rooms/${roomCode}`).update({
-            phase: 'bidding', hands: hands, deck: deck.slice(16), turn: players[0],
-            scores: { team1: 0, team2: 0 }, lastTrick: "None", trumpRevealed: false
+            phase: 'bidding',
+            hands: hands,
+            deck: deck.slice(16),
+            turn: players[0],
+            scores: { team1: 0, team2: 0 },
+            lastTrick: "None",
+            trumpRevealed: false,
+            passed: [], // Purane "Pass" kiye huye players ko reset karo
+            chats: {}   // Purani chat delete karo
         });
     });
 }
-
 function playCard(card) {
     cardSound.play();
     db.ref(`rooms/${roomCode}`).transaction(g => {
@@ -239,5 +249,18 @@ function declareMarriage() {
 }
 function getTeam(p, list) { let i = list.indexOf(p); return (i===0 || i===2) ? "team1" : "team2"; }
 function calculatePoints(trick) { let t = 0; Object.values(trick).forEach(c => t += points[c.slice(0,-1)] || 0); return t; }
-function showPlayAgain(isCreator) { if (isCreator) showSpecialBtn("play-again-btn", "Play Again 🔄", () => db.ref(`rooms/${roomCode}`).update({phase: 'waiting', trick: null, scores: {team1:0, team2:0}, lastTrick: "None"})); }
+function showPlayAgain(isCreator) {
+    if (isCreator) {
+        showSpecialBtn("play-again-btn", "New Game (Reset) 🔄", () => {
+            // Room ko poora clear karke naya banao
+            db.ref(`rooms/${roomCode}`).set({
+                creator: playerName,
+                phase: 'waiting',
+                players: { [playerName]: { id: playerName } }, // Sirf creator bachega
+                bid: 16,
+                scores: { team1: 0, team2: 0 }
+            });
+        });
+    }
+}
 
