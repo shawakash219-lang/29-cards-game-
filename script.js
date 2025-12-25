@@ -54,7 +54,7 @@ function startGame()
 {
   db.ref(`rooms/${roomCode}/players`).once("value", snap => {
     if(!snap.exists()) return alert("No players found");
-    
+
     const players = Object.keys(snap.val());
     if(players.length !== 4) return alert("4 players required to start");
 
@@ -75,6 +75,12 @@ function startGame()
       marriages: {},
       playTurn: players[0]
     });
+
+    // 🔥 THIS IS THE FIX
+    const myCards = hands[playerName];
+    if(myCards){
+      showMyCards(myCards);
+    }
 
     alert("Game Started! Cards distributed.");
   });
