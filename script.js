@@ -8,13 +8,14 @@ firebase.initializeApp({
   messagingSenderId: "989522634372",
   appId: "1:989522634372:web:7c9e6059119ccbd71e84d1"
 });
-const db = firebase.database()
+const db = firebase.database();
 
 let playerName, roomCode;
 const suits = ["S", "H", "D", "C"];
-const ranks = ["7", "8", "Q", "K", "10", "A", "9", "J"]; // Order of strength
+const ranks = ["7", "8", "Q", "K", "10", "A", "9", "J"]; // Low to High
 const points = { "J": 3, "9": 2, "A": 1, "10": 1, "K": 0, "Q": 0, "8": 0, "7": 0 };
 
+// ================= ROOM JOIN LOGIC =================
 function joinRoom() {
     playerName = document.getElementById("name-input").value.trim();
     roomCode = document.getElementById("room-input").value.trim() || "1001";
@@ -41,71 +42,42 @@ function startSync() {
     });
 }
 
+// ================= UI SYNC =================
 function updateUI(data) {
     const pList = Object.keys(data.players || {});
     const isMyTurn = data.turn === playerName;
     
-    // UI Updates
     document.getElementById("status-bar").innerText = isMyTurn ? "YOUR TURN" : `${data.turn || 'Waiting'}'s Turn`;
     document.getElementById("bid-val").innerText = `${data.bid} (${data.bidder || 'None'})`;
     document.getElementById("start-btn").classList.toggle("hidden", data.creator !== playerName || pList.length < 4 || data.phase !== 'waiting');
-  // updateUI function ke andar dalo
-if (data.phase === 'play' && data.turn === playerName) {
-    checkMarriageAvailability(data);
-} else {
-    if(document.getElementById("marriage-btn")) 
-       document.getElementById("marriage-btn").classList.add("hidden");
-}
-  
 
-    // Modals
+    // Marriage Button Visibility
+    if (data.phase === 'play' && isMyTurn) {
+        checkMarriageAvailability(data);
+    } else {
+        const mBtn = document.getElementById("marriage-btn");
+        if(mBtn) mBtn.classList.add("hidden");
+    }
+
+    // Modals visibility
     document.getElementById("bid-modal").classList.toggle("hidden", data.phase !== 'bidding' || !isMyTurn);
     document.getElementById("trump-modal").classList.toggle("hidden", data.phase !== 'trump_selection' || !isMyTurn);
     
     if (data.phase === 'bidding' && isMyTurn) createBidButtons(data.bid);
 
-    // Cards
+    // Cards display
     if (data.hands && data.hands[playerName]) {
         renderHand(data.hands[playerName], isMyTurn && data.phase === 'play');
     }
     renderTable(data.trick || {});
-}
 
-function createBidButtons(min) {
-    const div = document.getElementById("bid-options");
-    div.innerHTML = "";
-    for (let i = min + 1; i <= 28; i++) {
-        let b = document.createElement("button");
-        b.innerText = i;
-        b.onclick = () => submitBid(i);
-        div.appendChild(b);
+    // End Game Alert
+    if (data.phase === 'ended') {
+        alert("Game Over! Check Scores.");
     }
 }
 
-function renderHand(cards, active) {
-    const div = document.getElementById("my-hand");
-    div.innerHTML = "";
-    cards.forEach(c => {
-        const img = document.createElement("img");
-        img.src = `cards/${c}.png`; // Format: JH.png
-        img.className = "card";
-        img.onclick = () => { if (active) playCard(c); };
-        div.appendChild(img);
-    });
-}
-
-function renderTable(trick) {
-    const div = document.getElementById("play-area");
-    div.innerHTML = "";
-    Object.values(trick).forEach(c => {
-        const img = document.createElement("img");
-        img.src = `cards/${c}.png`;
-        img.className = "table-card";
-        div.appendChild(img);
-    });
-}
-
-// --- GAME ACTIONS ---
+// ================= GAMEPLAY ACTIONS =================
 
 function startGame() {
     let deck = [];
@@ -123,7 +95,8 @@ function startGame() {
             deck: deck.slice(16),
             turn: players[0],
             scores: { team1: 0, team2: 0 },
-            passed: []
+            passed: [],
+            declaredMarriages: []
         });
     });
 }
@@ -133,9 +106,10 @@ function submitBid(val) {
         if (!g) return g;
         if (val === 'pass') {
             if (!g.passed) g.passed = [];
-            g.passed.push(playerName);
+            if (!g.passed.includes(playerName)) g.passed.push(playerName);
         } else {
-            g.bid = val; g.bidder = playerName;
+            g.bid = val; 
+            g.bidder = playerName;
         }
         const p = Object.keys(g.players);
         g.turn = p[(p.indexOf(playerName) + 1) % 4];
@@ -155,61 +129,114 @@ function setTrump(suit) {
             g.hands[p] = g.hands[p].concat(g.deck.slice(i * 4, (i * 4) + 4));
         });
         db.ref(`rooms/${roomCode}`).update({
-            trump: suit, phase: 'play', hands: g.hands, turn: g.bidder
+            trump: suit, 
+            phase: 'play', 
+            hands: g.hands, 
+            turn: g.bidder
         });
     });
 }
+
 function playCard(card) {
     db.ref(`rooms/${roomCode}`).transaction(g => {
-        if (!g) return g;
+        if (!g || g.phase !== 'play') return g;
         if (!g.trick) g.trick = {};
         
-        // Card phenkna
         g.trick[playerName] = card;
         g.hands[playerName] = g.hands[playerName].filter(c => c !== card);
         
         const pList = Object.keys(g.players);
         
         if (Object.keys(g.trick).length === 4) {
-            // Charo cards aa gaye, ab winner nikalo
             let winner = determineWinner(g.trick, g.trump, g.leadSuit);
             let trickPoints = calculatePoints(g.trick);
-            
-            // Team find karo
             let team = getTeam(winner, pList);
-            g.scores[team] += trickPoints;
             
-            // Next turn winner ki hogi
+            g.scores[team] += trickPoints;
             g.turn = winner;
-            g.trick = null; // Trick saaf karo
-            g.leadSuit = null; // Lead suit reset
+            g.trick = null;
+            g.leadSuit = null;
+
+            // Check if all cards played
+            if (g.hands[playerName].length === 0) {
+                g.phase = 'ended';
+            }
         } else {
-            // Agar pehla card hai toh lead suit set karo
             if (Object.keys(g.trick).length === 1) {
-                g.leadSuit = card.slice(-1); // e.g., 'H' from 'JH'
+                g.leadSuit = card.slice(-1);
             }
             g.turn = pList[(pList.indexOf(playerName) + 1) % 4];
         }
         return g;
     });
 }
+
+// ================= MARRIAGE LOGIC =================
+
+function checkMarriageAvailability(data) {
+    const hand = data.hands[playerName];
+    const trump = data.trump;
+    let hasMarriage = false;
+
+    suits.forEach(s => {
+        if (hand.includes("K"+s) && hand.includes("Q"+s)) {
+            if (!data.declaredMarriages || !data.declaredMarriages.includes(s)) {
+                hasMarriage = true;
+            }
+        }
+    });
+
+    if (hasMarriage) {
+        let btn = document.getElementById("marriage-btn");
+        if (!btn) {
+            btn = document.createElement("button");
+            btn.id = "marriage-btn";
+            btn.innerText = "Declare Marriage 💍";
+            btn.onclick = declareMarriage;
+            document.body.appendChild(btn);
+        }
+        btn.classList.remove("hidden");
+    }
+}
+
+function declareMarriage() {
+    db.ref(`rooms/${roomCode}`).transaction(g => {
+        if (!g) return g;
+        const hand = g.hands[playerName];
+        let suitToDeclare = null;
+
+        suits.forEach(s => {
+            if (hand.includes("K"+s) && hand.includes("Q"+s)) {
+                if (!g.declaredMarriages || !g.declaredMarriages.includes(s)) {
+                    suitToDeclare = s;
+                }
+            }
+        });
+
+        if (suitToDeclare) {
+            if (!g.declaredMarriages) g.declaredMarriages = [];
+            g.declaredMarriages.push(suitToDeclare);
+            let bonus = (suitToDeclare === g.trump) ? 4 : 2;
+            let team = getTeam(playerName, Object.keys(g.players));
+            g.scores[team] += bonus;
+        }
+        return g;
+    });
+}
+
+// ================= HELPER FUNCTIONS =================
+
 function determineWinner(trick, trump, leadSuit) {
     let bestPlayer = null;
     let maxPower = -1;
-
     for (let player in trick) {
         let card = trick[player];
-        let val = card.slice(0, -1); // e.g., 'J'
-        let suit = card.slice(-1);   // e.g., 'H'
+        let val = card.slice(0, -1);
+        let suit = card.slice(-1);
+        let power = ranks.indexOf(val);
         
-        let power = ranks.indexOf(val); // Higher index = Stronger card
-        
-        // Rule: Trump beats everything, Lead suit beats others
-        if (suit === trump) {
-            power += 100; // Trump ko high priority di
-        } else if (suit !== leadSuit) {
-            power = -1; // Wrong suit is powerless
-        }
+        if (suit === trump) power += 100;
+        else if (suit !== leadSuit) power = -1;
 
         if (power > maxPower) {
             maxPower = power;
@@ -233,4 +260,37 @@ function getTeam(player, pList) {
     return (idx === 0 || idx === 2) ? "team1" : "team2";
 }
 
+function createBidButtons(min) {
+    const div = document.getElementById("bid-options");
+    div.innerHTML = "";
+    for (let i = min + 1; i <= 28; i++) {
+        let b = document.createElement("button");
+        b.innerText = i;
+        b.onclick = () => submitBid(i);
+        div.appendChild(b);
+    }
+}
+
+function renderHand(cards, active) {
+    const div = document.getElementById("my-hand");
+    div.innerHTML = "";
+    cards.forEach(c => {
+        const img = document.createElement("img");
+        img.src = `cards/${c}.png`;
+        img.className = "card";
+        img.onclick = () => { if (active) playCard(c); };
+        div.appendChild(img);
+    });
+}
+
+function renderTable(trick) {
+    const div = document.getElementById("play-area");
+    div.innerHTML = "";
+    Object.values(trick).forEach(c => {
+        const img = document.createElement("img");
+        img.src = `cards/${c}.png`;
+        img.className = "table-card";
+        div.appendChild(img);
+    });
+}
 
