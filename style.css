@@ -42,4 +42,11 @@ body { background: #0e301a; color: white; font-family: 'Segoe UI', sans-serif; m
     cursor: pointer;
     box-shadow: 0 4px 10px rgba(0,0,0,0.3);
 }
+.btn-special {
+    position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%);
+    background: #f39c12; padding: 10px 20px; border-radius: 20px;
+    border: none; color: white; cursor: pointer; font-weight: bold;
+}
+.hidden { display: none !important; }
+
 
