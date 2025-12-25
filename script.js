@@ -12,9 +12,9 @@ const db = firebase.database();
 
 // ================= GLOBAL =================
 let playerName="", roomCode="";
+const roomText = document.getElementById("roomText");
 const rank=["7","8","Q","K","10","A","9","J"];
 const points={J:3,"9":2,A:1,"10":1};
-
 const suits=["S","H","D","C"];
 const values=["7","8","9","10","J","Q","K","A"];
 
@@ -39,8 +39,12 @@ function joinRoom(){
     }
   });
 
+  // ✅ YAHI FIX HAI
+  roomText.innerText = "Room Code: " + roomCode;
+
   listenPlayers();
 }
+
 
 function listenPlayers(){
   db.ref(`rooms/${roomCode}/players`).on("value",s=>{
