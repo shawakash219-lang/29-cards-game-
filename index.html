@@ -1,9 +1,10 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>29 Card Game Multiplayer</title>
+    <title>29 Card Game Professional</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
@@ -12,17 +13,17 @@
     <div id="join-screen">
         <h1>29 Card Game</h1>
         <input type="text" id="name-input" placeholder="Your Name">
-        <input type="text" id="room-input" placeholder="Room Code">
+        <input type="text" id="room-input" placeholder="Room Code (Default: 1001)">
         <button onclick="joinRoom()">Join / Create Room</button>
     </div>
 
     <div id="game-screen" class="hidden">
         <div id="ui-layer">
-            <div id="room-info" style="color: #ffeb3b; font-weight: bold; margin-bottom: 5px;">
-                Room: <span id="room-id-text">-</span>
-            </div>
-            <div id="score-board">Team A: 0 | Team B: 0 (Bid: <span id="bid-val">-</span>)</div>
-            <div id="status-bar">Waiting...</div>
+            <div id="room-info">Room: <span id="room-id-text">-</span></div>
+            <div id="score-board">Team A: 0 | Team B: 0</div>
+            <div id="bid-info">Current Bid: <span id="bid-val">16</span></div>
+            <div id="status-bar">Waiting for players...</div>
+            <div id="last-trick-info">Last Trick: <span id="last-cards">None</span></div>
         </div>
 
         <div id="game-table">
@@ -33,18 +34,26 @@
             <div id="p-bottom" class="player-label">You</div>
         </div>
 
+        <div id="chat-container">
+            <div id="chat-messages"></div>
+            <div id="chat-btns">
+                <button onclick="sendChat('Partner! 🤝')">Partner!</button>
+                <button onclick="sendChat('Trump? 🃏')">Trump?</button>
+            </div>
+        </div>
+
         <div id="my-hand"></div>
         <button id="start-btn" class="hidden" onclick="startGame()">Start Game</button>
     </div>
 
     <div id="bid-modal" class="modal hidden">
-        <h3>Place Your Bid (16-28)</h3>
+        <h3>Place Your Bid</h3>
         <div id="bid-options"></div>
-        <button onclick="submitBid('pass')" style="background:red">Pass</button>
+        <button onclick="submitBid('pass')" style="background:#e74c3c">Pass</button>
     </div>
 
     <div id="trump-modal" class="modal hidden">
-        <h3>Choose Hidden Trump</h3>
+        <h3>Set Hidden Trump</h3>
         <div class="suits">
             <button onclick="setTrump('S')">♠</button>
             <button onclick="setTrump('H')">♥</button>
@@ -56,4 +65,3 @@
     <script src="script.js"></script>
 </body>
 </html>
-
