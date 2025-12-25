@@ -49,6 +49,14 @@ function updateUI(data) {
     document.getElementById("status-bar").innerText = isMyTurn ? "YOUR TURN" : `${data.turn || 'Waiting'}'s Turn`;
     document.getElementById("bid-val").innerText = `${data.bid} (${data.bidder || 'None'})`;
     document.getElementById("start-btn").classList.toggle("hidden", data.creator !== playerName || pList.length < 4 || data.phase !== 'waiting');
+  // updateUI function ke andar dalo
+if (data.phase === 'play' && data.turn === playerName) {
+    checkMarriageAvailability(data);
+} else {
+    if(document.getElementById("marriage-btn")) 
+       document.getElementById("marriage-btn").classList.add("hidden");
+}
+  
 
     // Modals
     document.getElementById("bid-modal").classList.toggle("hidden", data.phase !== 'bidding' || !isMyTurn);
@@ -151,19 +159,78 @@ function setTrump(suit) {
         });
     });
 }
-
 function playCard(card) {
     db.ref(`rooms/${roomCode}`).transaction(g => {
+        if (!g) return g;
         if (!g.trick) g.trick = {};
+        
+        // Card phenkna
         g.trick[playerName] = card;
         g.hands[playerName] = g.hands[playerName].filter(c => c !== card);
-        const p = Object.keys(g.players);
-        g.turn = p[(p.indexOf(playerName) + 1) % 4];
+        
+        const pList = Object.keys(g.players);
         
         if (Object.keys(g.trick).length === 4) {
-            // Trick Winner Logic here (next step)
+            // Charo cards aa gaye, ab winner nikalo
+            let winner = determineWinner(g.trick, g.trump, g.leadSuit);
+            let trickPoints = calculatePoints(g.trick);
+            
+            // Team find karo
+            let team = getTeam(winner, pList);
+            g.scores[team] += trickPoints;
+            
+            // Next turn winner ki hogi
+            g.turn = winner;
+            g.trick = null; // Trick saaf karo
+            g.leadSuit = null; // Lead suit reset
+        } else {
+            // Agar pehla card hai toh lead suit set karo
+            if (Object.keys(g.trick).length === 1) {
+                g.leadSuit = card.slice(-1); // e.g., 'H' from 'JH'
+            }
+            g.turn = pList[(pList.indexOf(playerName) + 1) % 4];
         }
         return g;
     });
 }
+function determineWinner(trick, trump, leadSuit) {
+    let bestPlayer = null;
+    let maxPower = -1;
+
+    for (let player in trick) {
+        let card = trick[player];
+        let val = card.slice(0, -1); // e.g., 'J'
+        let suit = card.slice(-1);   // e.g., 'H'
+        
+        let power = ranks.indexOf(val); // Higher index = Stronger card
+        
+        // Rule: Trump beats everything, Lead suit beats others
+        if (suit === trump) {
+            power += 100; // Trump ko high priority di
+        } else if (suit !== leadSuit) {
+            power = -1; // Wrong suit is powerless
+        }
+
+        if (power > maxPower) {
+            maxPower = power;
+            bestPlayer = player;
+        }
+    }
+    return bestPlayer;
+}
+
+function calculatePoints(trick) {
+    let total = 0;
+    Object.values(trick).forEach(card => {
+        let val = card.slice(0, -1);
+        total += points[val] || 0;
+    });
+    return total;
+}
+
+function getTeam(player, pList) {
+    let idx = pList.indexOf(player);
+    return (idx === 0 || idx === 2) ? "team1" : "team2";
+}
+
 
