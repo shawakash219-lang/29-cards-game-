@@ -17,60 +17,89 @@ const rank = ["7","8","Q","K","10","A","9","J"];
 const points = {J:3,"9":2,A:1,"10":1};
 
 // ================= JOIN =================
+function listenPlayers() {
+  db.ref(`rooms/${roomCode}/players`).on("value", snap => {
+    const playersDiv = document.getElementById("players");
+    playersDiv.innerHTML = "";
+
+    if (!snap.exists()) return;
+
+    Object.keys(snap.val()).forEach(p => {
+      let li = document.createElement("li");
+      li.innerText = p;
+      playersDiv.appendChild(li);
+    });
+  });
+
+  // 👇👇 YAHAN PASTE KARO 👇👇
+  db.ref(`rooms/${roomCode}`).on("value", snap=>{
+    if(!snap.exists()) return;
+    startBtn.style.display =
+      snap.val().creator === playerName ? "inline" : "none";
+  });
+}
+
 function joinRoom(){
   playerName = nameInput.value;
   roomCode = roomInput.value || Math.floor(1000+Math.random()*9000);
-  if(!playerName) return alert("Name likho bro");
 
-  db.ref(`rooms/${roomCode}/players/${playerName}`).set(true);
-  roomText.innerText = "Room: "+roomCode;
-  listenPlayers();
-}
+  const roomRef = db.ref(`rooms/${roomCode}`);
 
-function listenPlayers(){
-  db.ref(`rooms/${roomCode}/players`).on("value", snap=>{
-    players.innerHTML="";
-    if(!snap.exists()) return;
-    Object.keys(snap.val()).forEach(p=>{
-      let li=document.createElement("li");
-      li.innerText=p;
-      players.appendChild(li);
-    });
-    startBtn.style.display =
-      Object.keys(snap.val()).length===4 ? "inline" : "none";
+  roomRef.once("value", snap=>{
+    if(!snap.exists()){
+      // 👑 creator
+      roomRef.set({
+        creator: playerName,
+        players: { [playerName]: true }
+      });
+    }else{
+      roomRef.child("players/"+playerName).set(true);
+    }
   });
 }
-
 // ================= START GAME =================
 function startGame(){
-  db.ref(`rooms/${roomCode}/players`).once("value", snap=>{
-    let playersArr = Object.keys(snap.val());
-    if(playersArr.length!==4) return alert("4 players needed");
+  const roomRef = db.ref(`rooms/${roomCode}`);
 
+  roomRef.once("value", snap=>{
+    const d = snap.val();
+
+    // ❌ already started
+    if(d.phase) return alert("Game already started");
+
+    // ❌ only creator allowed
+    if(d.creator !== playerName)
+      return alert("Only room creator can start game");
+
+    const players = Object.keys(d.players);
+    if(players.length !== 4)
+      return alert("4 players required");
+
+    // ✅ SINGLE DECK ONLY
     let deck = shuffle(createDeck());
     let hands = {};
-    playersArr.forEach(p=>hands[p]=deck.splice(0,4)); // ONLY 4
 
-    db.ref(`rooms/${roomCode}`).set({
-      players: snap.val(),
-      hands,
+    players.forEach(p => hands[p] = deck.splice(0,4));
+
+    roomRef.update({
       deck,
-      phase:"bidding",
-      bid:16,
-      bidder:null,
-      passed:[],
-      turn:playersArr[0],
-      trump:null,
-      trumpHidden:true,
-      multiplier:1,
-      trick:{},
-      scores:{team1:0,team2:0}
+      hands,
+      phase: "bidding",
+      bid: 16,
+      bidder: null,
+      passed: [],
+      turn: players[0],
+      trump: null,
+      trumpHidden: true,
+      multiplier: 1,
+      trick: {},
+      scores: { team1:0, team2:0 }
     });
 
     showMyCards(hands[playerName]);
+    alert("Game Started Correctly ✅");
   });
 }
-
 // ================= BIDDING =================
 function bid(value){
   db.ref(`rooms/${roomCode}`).once("value",s=>{
