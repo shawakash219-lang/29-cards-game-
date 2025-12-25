@@ -28,4 +28,18 @@ body { background: #0e301a; color: white; font-family: 'Segoe UI', sans-serif; m
     display: flex; align-items: center; justify-content: center; 
 }
 .table-card { width: 60px; margin: 5px; box-shadow: 2px 2px 5px rgba(0,0,0,0.5); }
+#marriage-btn {
+    position: fixed;
+    bottom: 120px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #e67e22;
+    color: white;
+    padding: 12px 24px;
+    border: none;
+    border-radius: 25px;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+}
 
