@@ -1,52 +1,123 @@
-body { background: #0e301a; color: white; font-family: 'Segoe UI', sans-serif; margin: 0; overflow: hidden; text-align: center; }
+/* --- Basic Setup --- */
+body { 
+    background: #0e301a; 
+    color: white; 
+    font-family: 'Segoe UI', sans-serif; 
+    margin: 0; 
+    overflow: hidden; 
+    text-align: center; 
+}
+
+/* Ek hi baar kaafi hai */
 .hidden { display: none !important; }
 
+/* --- Game Table Area --- */
 #game-table { 
-    position: relative; width: 90vw; height: 60vh; max-width: 600px;
-    margin: 50px auto; background: radial-gradient(#1b5e20, #0a2614);
-    border: 8px solid #3e2723; border-radius: 100px;
+    position: relative; 
+    width: 90vw; 
+    height: 50vh; /* Thoda height kam kiya taaki cards ke liye jagah bache */
+    max-width: 600px;
+    margin: 80px auto 20px; 
+    background: radial-gradient(#1b5e20, #0a2614);
+    border: 8px solid #3e2723; 
+    border-radius: 100px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
 }
 
-.player-label { position: absolute; padding: 5px 10px; background: rgba(0,0,0,0.5); border-radius: 5px; }
-#p-top { top: -30px; left: 50%; transform: translateX(-50%); }
-#p-bottom { bottom: -30px; left: 50%; transform: translateX(-50%); color: #ffeb3b; }
-#p-left { left: -50px; top: 50%; transform: rotate(-90deg); }
-#p-right { right: -50px; top: 50%; transform: rotate(90deg); }
-
-#my-hand { display: flex; justify-content: center; gap: 5px; margin-top: 20px; }
-.card { width: 65px; cursor: pointer; transition: 0.2s; border-radius: 4px; }
-.card:hover { transform: translateY(-15px); }
-
-.modal { 
-    position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-    background: #212121; padding: 20px; border-radius: 10px; z-index: 100;
-    box-shadow: 0 0 20px black;
+/* --- Player Labels --- */
+.player-label { 
+    position: absolute; 
+    padding: 5px 10px; 
+    background: rgba(0,0,0,0.7); 
+    border-radius: 5px; 
+    font-size: 14px;
+    white-space: nowrap;
 }
+#p-top { top: -40px; left: 50%; transform: translateX(-50%); }
+#p-bottom { bottom: -40px; left: 50%; transform: translateX(-50%); color: #ffeb3b; border: 1px solid #ffeb3b; }
+#p-left { left: -60px; top: 50%; transform: translateY(-50%) rotate(-90deg); }
+#p-right { right: -60px; top: 50%; transform: translateY(-50%) rotate(90deg); }
 
+/* --- Playing Cards in Hand --- */
+#my-hand { 
+    display: flex; 
+    justify-content: center; 
+    gap: 8px; 
+    margin-top: 40px; 
+    padding: 10px;
+    flex-wrap: wrap; /* Mobile par cards niche shift ho jayenge */
+}
+.card { 
+    width: 60px; 
+    cursor: pointer; 
+    transition: transform 0.2s ease; 
+    border-radius: 5px; 
+    box-shadow: 2px 2px 10px rgba(0,0,0,0.3);
+}
+.card:hover { transform: translateY(-20px); }
+
+/* --- Cards on Table --- */
 #play-area { 
-    position: absolute; width: 100%; height: 100%; 
-    display: flex; align-items: center; justify-content: center; 
+    position: absolute; 
+    width: 100%; 
+    height: 100%; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
 }
-.table-card { width: 60px; margin: 5px; box-shadow: 2px 2px 5px rgba(0,0,0,0.5); }
-#marriage-btn {
+.table-card { 
+    width: 55px; 
+    margin: 5px; 
+    box-shadow: 2px 2px 5px rgba(0,0,0,0.5); 
+    border-radius: 4px;
+}
+
+/* --- Modals (Bid & Trump) --- */
+.modal { 
+    position: fixed; 
+    top: 50%; 
+    left: 50%; 
+    transform: translate(-50%, -50%);
+    background: #212121; 
+    padding: 25px; 
+    border-radius: 15px; 
+    z-index: 2000;
+    box-shadow: 0 0 30px rgba(0,0,0,0.8);
+    border: 1px solid #444;
+}
+
+/* --- Special Action Buttons --- */
+.btn-special, #marriage-btn {
     position: fixed;
-    bottom: 120px;
+    bottom: 120px; /* Cards ke thoda upar rakha hai */
     left: 50%;
     transform: translateX(-50%);
-    background: #e67e22;
+    background: linear-gradient(135deg, #f39c12, #e67e22);
     color: white;
     padding: 12px 24px;
     border: none;
-    border-radius: 25px;
+    border-radius: 30px;
     font-weight: bold;
     cursor: pointer;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.4);
+    z-index: 1500;
+    font-size: 16px;
+}
+
+.btn-special:active, #marriage-btn:active {
+    transform: translateX(-50%) scale(0.95);
+}
+
+/* Start Game Button */
+#start-btn {
+    background: #27ae60;
+    color: white;
+    padding: 15px 30px;
+    font-size: 18px;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    margin-top: 20px;
     box-shadow: 0 4px 10px rgba(0,0,0,0.3);
 }
-.btn-special {
-    position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%);
-    background: #f39c12; padding: 10px 20px; border-radius: 20px;
-    border: none; color: white; cursor: pointer; font-weight: bold;
-}
-.hidden { display: none !important; }
-
 
