@@ -1,54 +1,56 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>29 Card Game</title>
-
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
-
-  <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>29 Card Game Multiplayer</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 </head>
 <body>
+    <div id="join-screen">
+        <h1>29 Card Game</h1>
+        <input type="text" id="name-input" placeholder="Your Name">
+        <input type="text" id="room-input" placeholder="Room Code">
+        <button onclick="joinRoom()">Join / Create Room</button>
+    </div>
 
-<h2>🃏 29 Card Game</h2>
+    <div id="game-screen" class="hidden">
+        <div id="ui-layer">
+            <div id="score-board">Team A: 0 | Team B: 0 (Bid: <span id="bid-val">-</span>)</div>
+            <div id="status-bar">Waiting...</div>
+        </div>
 
-<div id="joinBox">
-  <input id="nameInput" placeholder="Your Name">
-  <input id="roomInput" placeholder="Room Code (blank = create)">
-  <button onclick="joinRoom()">Join / Create</button>
-</div>
+        <div id="game-table">
+            <div id="p-top" class="player-label">Opponent</div>
+            <div id="p-left" class="player-label">Opponent</div>
+            <div id="p-right" class="player-label">Opponent</div>
+            <div id="play-area"></div>
+            <div id="p-bottom" class="player-label">You</div>
+        </div>
 
-<h3 id="roomText"></h3>
+        <div id="my-hand"></div>
+        <button id="start-btn" class="hidden" onclick="startGame()">Start Game</button>
+    </div>
 
-<h3>Players</h3>
-<ul id="players"></ul>
+    <div id="bid-modal" class="modal hidden">
+        <h3>Place Your Bid (16-28)</h3>
+        <div id="bid-options"></div>
+        <button onclick="submitBid('pass')" style="background:red">Pass</button>
+    </div>
 
-<button id="startBtn" onclick="startGame()" style="display:none;">
-  START GAME
-</button>
+    <div id="trump-modal" class="modal hidden">
+        <h3>Choose Hidden Trump</h3>
+        <div class="suits">
+            <button onclick="setTrump('S')">♠</button>
+            <button onclick="setTrump('H')">♥</button>
+            <button onclick="setTrump('D')">♦</button>
+            <button onclick="setTrump('C')">♣</button>
+        </div>
+    </div>
 
-<!-- BIDDING -->
-<div id="biddingBox" style="display:none;">
-  <h3>Bidding</h3>
-  <p id="bidInfo"></p>
-  <input id="bidInput" type="number" min="16" max="28">
-  <button onclick="placeBid()">Bid</button>
-  <button onclick="passBid()">Pass</button>
-</div>
-
-<!-- DOUBLE -->
-<div id="doubleBox" style="display:none;">
-  <button onclick="doubleGame()">DOUBLE</button>
-  <button onclick="redoubleGame()">REDOUBLE</button>
-</div>
-
-<!-- PLAY AREA -->
-<h3>Table</h3>
-<div id="table"></div>
-
-<h3>Your Cards</h3>
-<div id="cards"></div>
-
-<script src="script.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
+
