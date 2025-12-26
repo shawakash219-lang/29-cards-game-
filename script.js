@@ -286,4 +286,7 @@ function showSpecialBtn(id, text, fn) {
 }
 function getTeam(p, list) { let i = list.indexOf(p); return (i===0 || i===2) ? "team1" : "team2"; }
 function calculatePoints(trick) { let t = 0; Object.values(trick).forEach(c => t += points[c.slice(0,-1)] || 0); return t; }
+window.setTrump = setTrump;
+window.submitBid = submitBid;
+window.startGame = startGame;
 
