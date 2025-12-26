@@ -11,13 +11,12 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-// ================= GLOBAL VARIABLES & SOUNDS =================
+// ================= GLOBAL VARIABLES =================
 let playerName, roomCode;
 const suits = ["S", "H", "D", "C"];
 const ranks = ["7", "8", "Q", "K", "10", "A", "9", "J"]; 
 const points = { "J": 3, "9": 2, "A": 1, "10": 1, "K": 0, "Q": 0, "8": 0, "7": 0 };
 
-// Sounds (Inhe sounds folder mein rakhein ya online link use karein)
 const cardSound = new Audio('https://assets.mixkit.co/active_storage/sfx/2014/2014-preview.mp3');
 const winSound = new Audio('https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3');
 
@@ -29,6 +28,11 @@ function joinRoom() {
 
     const ref = db.ref(`rooms/${roomCode}`);
     ref.once('value', s => {
+        const data = s.val();
+        // Agar game chal raha hai aur hum player nahi hain, toh block karein
+        if (data && data.phase !== 'waiting' && (!data.players || !data.players[playerName])) {
+            return alert("Game already in progress!");
+        }
         if (!s.exists()) {
             ref.set({ creator: playerName, phase: 'waiting', bid: 16, scores: {team1:0, team2:0} });
         }
@@ -52,40 +56,30 @@ function updateUI(data) {
     const pList = Object.keys(data.players || {});
     const isMyTurn = data.turn === playerName;
 
-    // 1. Live Scores & Bid
+    // 1. Scores & Bid
     const t1 = data.scores ? data.scores.team1 : 0;
     const t2 = data.scores ? data.scores.team2 : 0;
     document.getElementById("score-board").innerText = `Team A: ${t1} | Team B: ${t2}`;
     document.getElementById("bid-val").innerText = `${data.bid} (${data.bidder || 'None'})`;
 
-    // 2. Status Bar
-    let statusText = isMyTurn ? "YOUR TURN" : `${data.turn || 'Waiting'}'s Turn`;
+    // 2. Status
+    let statusText = isMyTurn ? "IT'S YOUR TURN!" : `${data.turn || 'Waiting'}'s Turn`;
     if (data.trumpRevealed) statusText += ` | Trump: ${data.trump}`;
     document.getElementById("status-bar").innerText = statusText;
 
-    // 3. Last Trick Display
+    // 3. Last Trick
     if(data.lastTrick) {
         document.getElementById("last-cards").innerText = data.lastTrick;
     }
 
-    // 4. Winner Animation Logic
-    if (data.phase === 'ended') {
-        showWinner(data);
-    } else {
-        toggleBtn("winner-overlay", false);
-    }
-
-    // 5. Chat Display
-    updateChat(data.chats);
-
-    // Modals & Buttons
+    // 4. Modals & Phase control
     document.getElementById("start-btn").classList.toggle("hidden", data.creator !== playerName || pList.length < 4 || data.phase !== 'waiting');
     document.getElementById("bid-modal").classList.toggle("hidden", data.phase !== 'bidding' || !isMyTurn);
     document.getElementById("trump-modal").classList.toggle("hidden", data.phase !== 'trump_selection' || !isMyTurn);
     
     if (data.phase === 'bidding' && isMyTurn) createBidButtons(data.bid, data.bidder);
     
-    // Special Buttons
+    // 5. Special Actions
     if (data.phase === 'play' && isMyTurn) {
         checkMarriageAvailability(data);
         if (data.leadSuit && !data.trumpRevealed) checkNeedTrump(data);
@@ -94,39 +88,52 @@ function updateUI(data) {
         toggleBtn("request-trump-btn", false);
     }
 
-    if (data.phase === 'ended') showPlayAgain(data.creator === playerName);
+    // 6. Winner & Play Again
+    if (data.phase === 'ended') {
+        showWinner(data);
+        showPlayAgain(data.creator === playerName);
+    } else {
+        toggleBtn("winner-overlay", false);
+        toggleBtn("play-again-btn", false);
+    }
 
+    // 7. Chat & Cards
+    updateChat(data.chats);
     if (data.hands && data.hands[playerName]) renderHand(data.hands[playerName], isMyTurn && data.phase === 'play');
     renderTable(data.trick || {});
 }
 
 // ================= GAME LOGIC =================
 function startGame() {
-    let deck = [];
-    suits.forEach(s => ["7", "8", "9", "10", "J", "Q", "K", "A"].forEach(v => deck.push(v + s)));
-    deck.sort(() => Math.random() - 0.5);
-
     db.ref(`rooms/${roomCode}`).once('value', s => {
         const data = s.val();
         const players = Object.keys(data.players);
+        if (players.length < 4) return alert("Need 4 players to start!");
 
-        // Sirf unhi 4 logon ko cards milenge jo abhi room mein hain
+        let deck = [];
+        suits.forEach(s => ["7", "8", "9", "10", "J", "Q", "K", "A"].forEach(v => deck.push(v + s)));
+        deck.sort(() => Math.random() - 0.5);
+
         let hands = {};
         players.forEach((p, i) => hands[p] = deck.slice(i * 4, (i * 4) + 4));
 
+        // RESET EVERYTHING FOR NEW ROUND
         db.ref(`rooms/${roomCode}`).update({
             phase: 'bidding',
             hands: hands,
             deck: deck.slice(16),
             turn: players[0],
+            bid: 16,
+            bidder: null,
+            passed: null,
             scores: { team1: 0, team2: 0 },
             lastTrick: "None",
             trumpRevealed: false,
-            passed: [], // Purane "Pass" kiye huye players ko reset karo
-            chats: {}   // Purani chat delete karo
+            chats: null
         });
     });
 }
+
 function playCard(card) {
     cardSound.play();
     db.ref(`rooms/${roomCode}`).transaction(g => {
@@ -153,7 +160,7 @@ function playCard(card) {
 // ================= HELPERS =================
 function createBidButtons(min, bidder) {
     const d = document.getElementById("bid-options"); d.innerHTML = "";
-    let startVal = (!bidder) ? 16 : min + 1; 
+    let startVal = (!bidder || bidder === "None") ? 16 : min + 1; 
     for (let i = startVal; i <= 28; i++) {
         let b = document.createElement("button"); b.innerText = i; b.onclick = () => submitBid(i); d.appendChild(b);
     }
@@ -178,6 +185,26 @@ function setTrump(s) {
     });
 }
 
+function renderHand(cards, act) {
+    const div = document.getElementById("my-hand"); div.innerHTML = "";
+    cards.forEach((c, index) => {
+        const img = document.createElement("img");
+        img.src = `cards/${c}.png`;
+        img.className = "card";
+        // Mobile overlap effect using z-index and margin
+        img.style.zIndex = index;
+        img.onclick = () => { if (act) playCard(c); };
+        div.appendChild(img);
+    });
+}
+
+function renderTable(trick) {
+    const div = document.getElementById("play-area"); div.innerHTML = "";
+    if (trick) Object.values(trick).forEach(c => {
+        const img = document.createElement("img"); img.src = `cards/${c}.png`; img.className = "table-card"; div.appendChild(img);
+    });
+}
+
 function determineWinner(trick, trump, lead, rev) {
     let bestP = null, maxP = -1;
     for (let p in trick) {
@@ -191,7 +218,7 @@ function determineWinner(trick, trump, lead, rev) {
 function showWinner(data) {
     winSound.play();
     const bidderTeam = getTeam(data.bidder, Object.keys(data.players));
-    const winText = (data.scores[bidderTeam] >= data.bid) ? `WINNER: ${bidderTeam.toUpperCase()}! 🏆` : `WINNER: ${(bidderTeam==='team1'?'team2':'team1').toUpperCase()}!`;
+    const winText = (data.scores[bidderTeam] >= data.bid) ? `TEAM ${bidderTeam === 'team1' ? 'A' : 'B'} WON! 🏆` : `TEAM ${bidderTeam === 'team1' ? 'B' : 'A'} WON!`;
     let winDiv = document.getElementById("winner-overlay");
     if(!winDiv) {
         winDiv = document.createElement("div"); winDiv.id = "winner-overlay"; winDiv.className = "winner-message";
@@ -200,28 +227,19 @@ function showWinner(data) {
     winDiv.innerText = winText; winDiv.classList.remove("hidden");
 }
 
-function sendChat(msg) { db.ref(`rooms/${roomCode}/chats`).push({ sender: playerName, text: msg }); }
+function showPlayAgain(isCreator) {
+    if (isCreator) {
+        showSpecialBtn("play-again-btn", "NEW GAME 🔄", () => {
+            db.ref(`rooms/${roomCode}`).update({ phase: 'waiting', trick: null, scores: {team1:0, team2:0}, lastTrick: "None", bid: 16, bidder: null, passed: null });
+        });
+    }
+}
 
+function sendChat(msg) { db.ref(`rooms/${roomCode}/chats`).push({ sender: playerName, text: msg }); }
 function updateChat(chats) {
     const div = document.getElementById("chat-messages"); if(!div || !chats) return;
-    div.innerHTML = Object.values(chats).slice(-5).map(m => `<div class="chat-msg"><b>${m.sender}:</b> ${m.text}</div>`).join("");
+    div.innerHTML = Object.values(chats).slice(-3).map(m => `<div class="chat-msg"><b>${m.sender}:</b> ${m.text}</div>`).join("");
     div.scrollTop = div.scrollHeight;
-}
-
-// Baki Helper Functions (renderHand, renderTable, toggleBtn, showSpecialBtn, checkMarriageAvailability, checkNeedTrump, requestTrump, getTeam, calculatePoints, declareMarriage)
-// (Yahan space ki wajah se short kar raha hoon, ye pehle wale hi rahenge)
-function renderHand(cards, act) {
-    const div = document.getElementById("my-hand"); div.innerHTML = "";
-    cards.forEach(c => {
-        const img = document.createElement("img"); img.src = `cards/${c}.png`; img.className = "card";
-        img.onclick = () => { if (act) playCard(c); }; div.appendChild(img);
-    });
-}
-function renderTable(trick) {
-    const div = document.getElementById("play-area"); div.innerHTML = "";
-    if (trick) Object.values(trick).forEach(c => {
-        const img = document.createElement("img"); img.src = `cards/${c}.png`; img.className = "table-card"; div.appendChild(img);
-    });
 }
 function toggleBtn(id, show) { const btn = document.getElementById(id); if (btn) btn.classList.toggle("hidden", !show); }
 function showSpecialBtn(id, text, fn) {
@@ -249,18 +267,4 @@ function declareMarriage() {
 }
 function getTeam(p, list) { let i = list.indexOf(p); return (i===0 || i===2) ? "team1" : "team2"; }
 function calculatePoints(trick) { let t = 0; Object.values(trick).forEach(c => t += points[c.slice(0,-1)] || 0); return t; }
-function showPlayAgain(isCreator) {
-    if (isCreator) {
-        showSpecialBtn("play-again-btn", "New Game (Reset) 🔄", () => {
-            // Room ko poora clear karke naya banao
-            db.ref(`rooms/${roomCode}`).set({
-                creator: playerName,
-                phase: 'waiting',
-                players: { [playerName]: { id: playerName } }, // Sirf creator bachega
-                bid: 16,
-                scores: { team1: 0, team2: 0 }
-            });
-        });
-    }
-}
 
