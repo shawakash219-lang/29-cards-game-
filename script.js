@@ -29,7 +29,6 @@ function joinRoom() {
     const ref = db.ref(`rooms/${roomCode}`);
     ref.once('value', s => {
         const data = s.val();
-        // Agar game chal raha hai aur hum player nahi hain, toh block karein
         if (data && data.phase !== 'waiting' && (!data.players || !data.players[playerName])) {
             return alert("Game already in progress!");
         }
@@ -62,24 +61,19 @@ function updateUI(data) {
     document.getElementById("score-board").innerText = `Team A: ${t1} | Team B: ${t2}`;
     document.getElementById("bid-val").innerText = `${data.bid} (${data.bidder || 'None'})`;
 
-    // 2. Status
+    // 2. Status Bar
     let statusText = isMyTurn ? "IT'S YOUR TURN!" : `${data.turn || 'Waiting'}'s Turn`;
     if (data.trumpRevealed) statusText += ` | Trump: ${data.trump}`;
     document.getElementById("status-bar").innerText = statusText;
 
-    // 3. Last Trick
-    if(data.lastTrick) {
-        document.getElementById("last-cards").innerText = data.lastTrick;
-    }
-
-    // 4. Modals & Phase control
+    // 3. Modals Control
     document.getElementById("start-btn").classList.toggle("hidden", data.creator !== playerName || pList.length < 4 || data.phase !== 'waiting');
     document.getElementById("bid-modal").classList.toggle("hidden", data.phase !== 'bidding' || !isMyTurn);
     document.getElementById("trump-modal").classList.toggle("hidden", data.phase !== 'trump_selection' || !isMyTurn);
     
     if (data.phase === 'bidding' && isMyTurn) createBidButtons(data.bid, data.bidder);
     
-    // 5. Special Actions
+    // 4. Special Buttons & Marriage
     if (data.phase === 'play' && isMyTurn) {
         checkMarriageAvailability(data);
         if (data.leadSuit && !data.trumpRevealed) checkNeedTrump(data);
@@ -88,7 +82,7 @@ function updateUI(data) {
         toggleBtn("request-trump-btn", false);
     }
 
-    // 6. Winner & Play Again
+    // 5. Game End & Winner
     if (data.phase === 'ended') {
         showWinner(data);
         showPlayAgain(data.creator === playerName);
@@ -97,18 +91,18 @@ function updateUI(data) {
         toggleBtn("play-again-btn", false);
     }
 
-    // 7. Chat & Cards
+    // 6. Cards Render
     updateChat(data.chats);
     if (data.hands && data.hands[playerName]) renderHand(data.hands[playerName], isMyTurn && data.phase === 'play');
     renderTable(data.trick || {});
 }
 
-// ================= GAME LOGIC =================
+// ================= GAME CORE LOGIC =================
 function startGame() {
     db.ref(`rooms/${roomCode}`).once('value', s => {
         const data = s.val();
         const players = Object.keys(data.players);
-        if (players.length < 4) return alert("Need 4 players to start!");
+        if (players.length < 4) return alert("Need 4 players!");
 
         let deck = [];
         suits.forEach(s => ["7", "8", "9", "10", "J", "Q", "K", "A"].forEach(v => deck.push(v + s)));
@@ -117,20 +111,57 @@ function startGame() {
         let hands = {};
         players.forEach((p, i) => hands[p] = deck.slice(i * 4, (i * 4) + 4));
 
-        // RESET EVERYTHING FOR NEW ROUND
-        db.ref(`rooms/${roomCode}`).update({
+        db.ref(`rooms/${roomCode}`).set({
+            creator: data.creator,
+            players: data.players,
             phase: 'bidding',
             hands: hands,
             deck: deck.slice(16),
             turn: players[0],
             bid: 16,
-            bidder: null,
-            passed: null,
+            bidder: "None",
+            passed: [],
             scores: { team1: 0, team2: 0 },
             lastTrick: "None",
             trumpRevealed: false,
-            chats: null
+            declaredMarriages: []
         });
+    });
+}
+
+function submitBid(v) {
+    db.ref(`rooms/${roomCode}`).transaction(g => {
+        if (!g) return g;
+        if (v === 'pass') { 
+            if (!g.passed) g.passed = []; 
+            if (!g.passed.includes(playerName)) g.passed.push(playerName); 
+        } else { 
+            g.bid = v; 
+            g.bidder = playerName; 
+        }
+        const p = Object.keys(g.players);
+        g.turn = p[(p.indexOf(playerName) + 1) % 4];
+        if (g.passed && g.passed.length === 3) { 
+            g.phase = 'trump_selection'; 
+            g.turn = g.bidder; 
+        }
+        return g;
+    });
+}
+
+function setTrump(s) {
+    db.ref(`rooms/${roomCode}`).transaction(g => {
+        if (!g) return g;
+        g.trump = s;
+        g.phase = 'play';
+        const pList = Object.keys(g.players);
+        pList.forEach((p, i) => {
+            const extra = g.deck.slice(i * 4, (i * 4) + 4);
+            g.hands[p] = g.hands[p].concat(extra);
+        });
+        g.deck = [];
+        g.turn = g.bidder;
+        return g;
     });
 }
 
@@ -158,31 +189,14 @@ function playCard(card) {
 }
 
 // ================= HELPERS =================
-function createBidButtons(min, bidder) {
-    const d = document.getElementById("bid-options"); d.innerHTML = "";
-    let startVal = (!bidder || bidder === "None") ? 16 : min + 1; 
-    for (let i = startVal; i <= 28; i++) {
-        let b = document.createElement("button"); b.innerText = i; b.onclick = () => submitBid(i); d.appendChild(b);
+function determineWinner(trick, trump, lead, rev) {
+    let bestP = null, maxP = -1;
+    for (let p in trick) {
+        let card = trick[p], val = card.slice(0,-1), suit = card.slice(-1), pwr = ranks.indexOf(val);
+        if (rev && suit === trump) pwr += 100; else if (suit !== lead) pwr = -1;
+        if (pwr > maxP) { maxP = pwr; bestP = p; }
     }
-}
-
-function submitBid(v) {
-    db.ref(`rooms/${roomCode}`).transaction(g => {
-        if (!g) return g;
-        if (v === 'pass') { if (!g.passed) g.passed = []; g.passed.push(playerName); }
-        else { g.bid = v; g.bidder = playerName; }
-        const p = Object.keys(g.players); g.turn = p[(p.indexOf(playerName) + 1) % 4];
-        if (g.passed && g.passed.length === 3) { g.phase = 'trump_selection'; g.turn = g.bidder; }
-        return g;
-    });
-}
-
-function setTrump(s) {
-    db.ref(`rooms/${roomCode}`).once('value', snap => {
-        const g = snap.val(); const pList = Object.keys(g.players);
-        pList.forEach((p, i) => g.hands[p] = g.hands[p].concat(g.deck.slice(i * 4, (i * 4) + 4)));
-        db.ref(`rooms/${roomCode}`).update({ trump: s, phase: 'play', hands: g.hands, turn: g.bidder });
-    });
+    return bestP;
 }
 
 function renderHand(cards, act) {
@@ -191,7 +205,6 @@ function renderHand(cards, act) {
         const img = document.createElement("img");
         img.src = `cards/${c}.png`;
         img.className = "card";
-        // Mobile overlap effect using z-index and margin
         img.style.zIndex = index;
         img.onclick = () => { if (act) playCard(c); };
         div.appendChild(img);
@@ -205,14 +218,12 @@ function renderTable(trick) {
     });
 }
 
-function determineWinner(trick, trump, lead, rev) {
-    let bestP = null, maxP = -1;
-    for (let p in trick) {
-        let card = trick[p], val = card.slice(0,-1), suit = card.slice(-1), pwr = ranks.indexOf(val);
-        if (rev && suit === trump) pwr += 100; else if (suit !== lead) pwr = -1;
-        if (pwr > maxP) { maxP = pwr; bestP = p; }
+function createBidButtons(min, bidder) {
+    const d = document.getElementById("bid-options"); d.innerHTML = "";
+    let startVal = (!bidder || bidder === "None") ? 16 : min + 1; 
+    for (let i = startVal; i <= 28; i++) {
+        let b = document.createElement("button"); b.innerText = i; b.onclick = () => submitBid(i); d.appendChild(b);
     }
-    return bestP;
 }
 
 function showWinner(data) {
@@ -230,9 +241,35 @@ function showWinner(data) {
 function showPlayAgain(isCreator) {
     if (isCreator) {
         showSpecialBtn("play-again-btn", "NEW GAME 🔄", () => {
-            db.ref(`rooms/${roomCode}`).update({ phase: 'waiting', trick: null, scores: {team1:0, team2:0}, lastTrick: "None", bid: 16, bidder: null, passed: null });
+            db.ref(`rooms/${roomCode}`).update({ 
+                phase: 'waiting', trick: null, scores: {team1:0, team2:0}, 
+                lastTrick: "None", bid: 16, bidder: "None", passed: [],
+                trumpRevealed: false, declaredMarriages: []
+            });
         });
     }
+}
+
+function checkNeedTrump(data) { if (!data.hands[playerName].some(c => c.endsWith(data.leadSuit))) showSpecialBtn("request-trump-btn", "Request Trump ❓", () => db.ref(`rooms/${roomCode}`).update({trumpRevealed:true})); }
+function checkMarriageAvailability(data) {
+    const hand = data.hands[playerName];
+    const hasM = suits.some(s => hand.includes("K"+s) && hand.includes("Q"+s) && (!data.declaredMarriages || !data.declaredMarriages.includes(s)));
+    if (hasM) showSpecialBtn("marriage-btn", "Declare Marriage 💍", declareMarriage);
+}
+function declareMarriage() {
+    db.ref(`rooms/${roomCode}`).transaction(g => {
+        if (!g) return g;
+        suits.forEach(s => {
+            if (g.hands[playerName].includes("K"+s) && g.hands[playerName].includes("Q"+s)) {
+                if (!g.declaredMarriages) g.declaredMarriages = [];
+                if (!g.declaredMarriages.includes(s)) { 
+                    g.declaredMarriages.push(s); 
+                    g.scores[getTeam(playerName, Object.keys(g.players))] += (s === g.trump ? 4 : 2); 
+                }
+            }
+        });
+        return g;
+    });
 }
 
 function sendChat(msg) { db.ref(`rooms/${roomCode}/chats`).push({ sender: playerName, text: msg }); }
@@ -246,24 +283,6 @@ function showSpecialBtn(id, text, fn) {
     let btn = document.getElementById(id);
     if (!btn) { btn = document.createElement("button"); btn.id = id; btn.className = "btn-special"; btn.onclick = fn; document.body.appendChild(btn); }
     btn.innerText = text; btn.classList.remove("hidden");
-}
-function checkNeedTrump(data) { if (!data.hands[playerName].some(c => c.endsWith(data.leadSuit))) showSpecialBtn("request-trump-btn", "Request Trump ❓", () => db.ref(`rooms/${roomCode}`).update({trumpRevealed:true})); }
-function checkMarriageAvailability(data) {
-    const hand = data.hands[playerName];
-    const hasM = suits.some(s => hand.includes("K"+s) && hand.includes("Q"+s) && (!data.declaredMarriages || !data.declaredMarriages.includes(s)));
-    if (hasM) showSpecialBtn("marriage-btn", "Declare Marriage 💍", declareMarriage);
-}
-function declareMarriage() {
-    db.ref(`rooms/${roomCode}`).transaction(g => {
-        if (!g) return g;
-        suits.forEach(s => {
-            if (g.hands[playerName].includes("K"+s) && g.hands[playerName].includes("Q"+s)) {
-                if (!g.declaredMarriages) g.declaredMarriages = [];
-                if (!g.declaredMarriages.includes(s)) { g.declaredMarriages.push(s); g.scores[getTeam(playerName, Object.keys(g.players))] += (s === g.trump ? 4 : 2); }
-            }
-        });
-        return g;
-    });
 }
 function getTeam(p, list) { let i = list.indexOf(p); return (i===0 || i===2) ? "team1" : "team2"; }
 function calculatePoints(trick) { let t = 0; Object.values(trick).forEach(c => t += points[c.slice(0,-1)] || 0); return t; }
