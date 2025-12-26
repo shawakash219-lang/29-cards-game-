@@ -1,37 +1,45 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>29 Card Game Professional</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>29 Card Game Mobile</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 </head>
 <body>
+
     <div id="join-screen">
-        <h1>29 Card Game</h1>
-        <input type="text" id="name-input" placeholder="Your Name">
-        <input type="text" id="room-input" placeholder="Room Code (Default: 1001)">
-        <button onclick="joinRoom()">Join / Create Room</button>
+        <div class="login-box">
+            <h1>29 CARD GAME</h1>
+            <input type="text" id="name-input" placeholder="Enter Your Name">
+            <input type="text" id="room-input" placeholder="Room Code (Ex: 1001)">
+            <button onclick="joinRoom()" id="join-btn">JOIN / CREATE ROOM</button>
+        </div>
     </div>
 
     <div id="game-screen" class="hidden">
+        
         <div id="ui-layer">
-            <div id="room-info">Room: <span id="room-id-text">-</span></div>
+            <div class="info-row">
+                <span id="room-info">Room: <b id="room-id-text">-</b></span>
+                <span id="bid-info">Bid: <b id="bid-val">16</b></span>
+            </div>
             <div id="score-board">Team A: 0 | Team B: 0</div>
-            <div id="bid-info">Current Bid: <span id="bid-val">16</span></div>
-            <div id="status-bar">Waiting for players...</div>
-            <div id="last-trick-info">Last Trick: <span id="last-cards">None</span></div>
+            <div id="status-bar">Waiting...</div>
+            <div id="last-trick-info">Last: <span id="last-cards">None</span></div>
         </div>
 
         <div id="game-table">
-            <div id="p-top" class="player-label">Opponent</div>
-            <div id="p-left" class="player-label">Opponent</div>
-            <div id="p-right" class="player-label">Opponent</div>
-            <div id="play-area"></div>
-            <div id="p-bottom" class="player-label">You</div>
+            <div id="p-top" class="player-label">Top Player</div>
+            <div id="p-left" class="player-label">Left</div>
+            <div id="p-right" class="player-label">Right</div>
+            
+            <div id="play-area">
+                </div>
+            
+            <div id="p-bottom" class="player-label">YOU</div>
         </div>
 
         <div id="chat-container">
@@ -43,25 +51,33 @@
         </div>
 
         <div id="my-hand"></div>
-        <button id="start-btn" class="hidden" onclick="startGame()">Start Game</button>
+
+        <button id="start-btn" class="hidden" onclick="startGame()">START GAME</button>
     </div>
 
     <div id="bid-modal" class="modal hidden">
-        <h3>Place Your Bid</h3>
-        <div id="bid-options"></div>
-        <button onclick="submitBid('pass')" style="background:#e74c3c">Pass</button>
+        <div class="modal-content">
+            <h3>PLACE YOUR BID</h3>
+            <div id="bid-options"></div>
+            <button onclick="submitBid('pass')" id="pass-btn">PASS</button>
+        </div>
     </div>
 
     <div id="trump-modal" class="modal hidden">
-        <h3>Set Hidden Trump</h3>
-        <div class="suits">
-            <button onclick="setTrump('S')">♠</button>
-            <button onclick="setTrump('H')">♥</button>
-            <button onclick="setTrump('D')">♦</button>
-            <button onclick="setTrump('C')">♣</button>
+        <div class="modal-content">
+            <h3>SELECT HIDDEN TRUMP</h3>
+            <div class="suits-grid">
+                <button onclick="setTrump('S')" class="suit-btn">♠</button>
+                <button onclick="setTrump('H')" class="suit-btn red">♥</button>
+                <button onclick="setTrump('D')" class="suit-btn red">♦</button>
+                <button onclick="setTrump('C')" class="suit-btn">♣</button>
+            </div>
         </div>
     </div>
+
+    <audio id="card-play-sound" src="https://assets.mixkit.co/active_storage/sfx/2014/2014-preview.mp3"></audio>
 
     <script src="script.js"></script>
 </body>
 </html>
+
