@@ -1,23 +1,37 @@
-/* General Setup */
-* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+/* --- General Setup --- */
+* { 
+    box-sizing: border-box; 
+    -webkit-tap-highlight-color: transparent; 
+    touch-action: manipulation; /* Double-tap zoom rokne ke liye */
+}
+
 body { 
     background: #0a2614; 
     color: white; 
     font-family: 'Segoe UI', Roboto, sans-serif; 
     margin: 0; 
+    padding: 0;
     overflow: hidden; 
     height: 100vh;
+    width: 100vw;
 }
+
 .hidden { display: none !important; }
 
-/* Login/Join Screen */
+/* --- Login/Join Screen --- */
 #join-screen {
     height: 100vh;
+    width: 100vw;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('https://www.transparenttextures.com/patterns/dark-matter.png');
+    background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url('https://www.transparenttextures.com/patterns/dark-matter.png');
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 1000;
 }
+
 .login-box {
     background: #1b5e20;
     padding: 30px;
@@ -25,14 +39,18 @@ body {
     box-shadow: 0 10px 30px rgba(0,0,0,0.5);
     width: 90%;
     max-width: 350px;
+    text-align: center;
 }
+
 input {
     width: 100%;
     padding: 12px;
     margin: 10px 0;
     border-radius: 8px;
-    border: none;
+    border: 1px solid #2e7d32;
+    background: #f1f8e9;
 }
+
 #join-btn {
     width: 100%;
     background: #f39c12;
@@ -42,160 +60,221 @@ input {
     padding: 15px;
     border-radius: 8px;
     cursor: pointer;
+    font-size: 16px;
+    box-shadow: 0 4px #d35400;
 }
 
-/* UI Layer */
+/* --- UI Layer (Score & Status) --- */
 #ui-layer {
     padding: 10px;
-    background: rgba(0,0,0,0.8);
+    background: rgba(0,0,0,0.85);
     position: fixed;
-    top: 0; width: 100%;
-    z-index: 10;
+    top: 0; 
+    width: 100%;
+    z-index: 100; /* Table se upar */
     font-size: 13px;
+    border-bottom: 1px solid #333;
 }
+
 .info-row { display: flex; justify-content: space-between; margin-bottom: 5px; color: #ffeb3b; }
-#score-board { font-size: 18px; font-weight: bold; text-align: center; color: white; }
+#score-board { font-size: 18px; font-weight: bold; text-align: center; color: white; margin: 2px 0; }
 #status-bar { text-align: center; color: #4fc3f7; font-weight: bold; margin-top: 3px; }
 
-/* Game Table */
+/* --- Game Table Area --- */
 #game-table {
     position: relative;
     width: 92vw;
-    height: 40vh;
-    margin: 110px auto 20px;
+    height: 38vh;
+    margin: 120px auto 20px;
     background: radial-gradient(#2e7d32, #1b5e20);
     border: 6px solid #3e2723;
     border-radius: 100px;
-    box-shadow: inset 0 0 50px rgba(0,0,0,0.5);
+    box-shadow: inset 0 0 50px rgba(0,0,0,0.6);
 }
 
 .player-label {
     position: absolute;
-    background: rgba(0,0,0,0.7);
-    padding: 4px 10px;
-    border-radius: 10px;
+    background: rgba(0,0,0,0.8);
+    padding: 4px 12px;
+    border-radius: 12px;
     font-size: 11px;
     border: 1px solid #555;
+    white-space: nowrap;
 }
 #p-top { top: -15px; left: 50%; transform: translateX(-50%); }
 #p-bottom { bottom: -15px; left: 50%; transform: translateX(-50%); color: #ffeb3b; border-color: #ffeb3b; }
-#p-left { left: -35px; top: 50%; transform: rotate(-90deg); }
-#p-right { right: -35px; top: 50%; transform: rotate(90deg); }
+#p-left { left: -30px; top: 50%; transform: translateY(-50%) rotate(-90deg); }
+#p-right { right: -30px; top: 50%; transform: translateY(-50%) rotate(90deg); }
 
-/* Play Area */
+/* --- Play Area (Table Cards) --- */
 #play-area {
     display: flex;
     justify-content: center;
     align-items: center;
     height: 100%;
+    width: 100%;
 }
 .table-card {
-    width: 50px;
-    height: 70px;
-    margin: 3px;
-    border-radius: 4px;
-    box-shadow: 2px 2px 10px rgba(0,0,0,0.5);
+    width: 55px;
+    height: 75px;
+    margin: 4px;
+    border-radius: 6px;
+    box-shadow: 2px 4px 8px rgba(0,0,0,0.5);
+    background: white;
 }
 
-/* Hand & Cards */
+/* --- Player Hand & Cards --- */
 #my-hand {
     position: fixed;
-    bottom: 20px;
-    left: 0; width: 100%;
+    bottom: 25px;
+    left: 0; 
+    width: 100%;
     display: flex;
     justify-content: center;
     padding: 0 10px;
+    height: 100px;
 }
 .card {
-    width: 60px; /* Mobile width */
-    height: 85px;
-    margin-left: -20px; /* Overlap cards like real hand */
-    border-radius: 6px;
-    box-shadow: -2px 0 10px rgba(0,0,0,0.5);
-    transition: 0.2s;
+    width: 65px; 
+    height: 90px;
+    margin-left: -25px; /* Cards overlap effect */
+    border-radius: 8px;
+    box-shadow: -3px 0 10px rgba(0,0,0,0.6);
+    transition: transform 0.2s;
     background: white;
+    cursor: pointer;
 }
 .card:first-child { margin-left: 0; }
-.card:active { transform: translateY(-25px); z-index: 100 !important; }
+.card:active { 
+    transform: translateY(-30px); 
+    z-index: 200 !important; 
+}
 
-/* Modals */
+/* --- Modals (Bidding & Trump Selection) --- */
 .modal {
     position: fixed;
-    top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0,0,0,0.85);
+    top: 0; left: 0; 
+    width: 100vw; height: 100vh;
+    background: rgba(0,0,0,0.9);
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 1000;
+    z-index: 10000 !important; /* Screen ke sabse upar */
+    pointer-events: auto;
 }
+
 .modal-content {
-    background: #333;
-    padding: 20px;
-    border-radius: 15px;
-    width: 90%;
+    background: #222;
+    padding: 25px;
+    border-radius: 20px;
+    width: 85%;
     max-width: 400px;
     text-align: center;
+    border: 2px solid #444;
 }
+
 #bid-options {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 10px;
-    margin: 15px 0;
+    gap: 12px;
+    margin: 20px 0;
 }
 #bid-options button {
-    padding: 10px;
-    background: #444;
+    padding: 12px 5px;
+    background: #333;
     color: white;
-    border: 1px solid #666;
-    border-radius: 5px;
+    border: 1px solid #555;
+    border-radius: 8px;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+.suits-grid {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 15px;
 }
 .suit-btn {
-    font-size: 30px;
-    padding: 15px;
-    margin: 5px;
-    border-radius: 10px;
+    font-size: 35px;
+    width: 70px;
+    height: 90px;
+    background: white;
+    color: black;
+    border-radius: 12px;
     border: none;
+    box-shadow: 0 5px #ccc;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
-.red { color: #e74c3c; }
+.suit-btn:active {
+    transform: translateY(4px);
+    box-shadow: 0 2px #ccc;
+}
+.red { color: #e74c3c !important; }
 
-/* Chat Box */
+/* --- Chat & Buttons --- */
 #chat-container {
     position: fixed;
-    right: 5px;
-    bottom: 120px;
-    width: 120px;
+    right: 10px;
+    bottom: 130px;
+    width: 130px;
+    z-index: 80;
 }
 #chat-messages {
-    height: 60px;
-    background: rgba(0,0,0,0.6);
-    font-size: 10px;
-    padding: 5px;
+    height: 70px;
+    background: rgba(0,0,0,0.7);
+    font-size: 11px;
+    padding: 6px;
     overflow-y: auto;
-    border-radius: 5px;
+    border-radius: 8px;
+    border: 1px solid #444;
 }
+.chat-msg { margin-bottom: 4px; border-bottom: 1px solid #333; padding-bottom: 2px; }
+
 #chat-btns button {
     width: 100%;
-    font-size: 10px;
-    margin-top: 3px;
+    font-size: 11px;
+    margin-top: 5px;
     background: #2980b9;
     color: white;
     border: none;
-    padding: 5px;
-    border-radius: 3px;
+    padding: 8px;
+    border-radius: 6px;
+    font-weight: bold;
 }
 
-/* Start Button & Special Buttons */
+/* --- Special Action Buttons --- */
 #start-btn, .btn-special {
     position: fixed;
-    bottom: 120px;
+    bottom: 140px;
     left: 50%;
     transform: translateX(-50%);
     background: #27ae60;
     color: white;
-    padding: 12px 30px;
-    border-radius: 25px;
+    padding: 14px 35px;
+    border-radius: 30px;
     font-weight: bold;
     border: none;
-    z-index: 100;
+    z-index: 500;
+    font-size: 16px;
+    box-shadow: 0 5px #1e8449;
+}
+
+.winner-message {
+    position: fixed;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(255,215,0,0.95);
+    color: black;
+    padding: 30px;
+    border-radius: 20px;
+    font-size: 24px;
+    font-weight: bold;
+    text-align: center;
+    z-index: 20000;
+    border: 5px solid white;
 }
 
